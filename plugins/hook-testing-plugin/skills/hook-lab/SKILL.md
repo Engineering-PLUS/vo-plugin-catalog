@@ -3,7 +3,7 @@ name: hook-lab
 description: Test a single Claude Code hook event in isolation, either by replaying a synthetic JSON fixture through its configured hook command(s), or by tailing the live capture log. Use when verifying hook input/output schemas, permission decisions, or additionalContext behavior without needing to organically trigger the event in a live Chat or Cowork session.
 argument-hint: "[EventName] | --logs [EventName] | --list"
 disable-model-invocation: true
-allowed-tools: Bash(cat ${CLAUDE_SKILL_DIR}/fixtures/*), Bash(ls *), Bash(find *), Bash(hostname), Bash(python ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py), Bash(tail *)
+allowed-tools: Bash(cat ${CLAUDE_SKILL_DIR}/fixtures/*), Bash(ls *), Bash(find *), Bash(hostname), Bash(python ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py), Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh), Bash(powershell *), Bash(tail *)
 ---
 
 # Hook Lab
@@ -93,6 +93,9 @@ fallback) so the user knows where captures are landing.
      `args`, with `${CLAUDE_PLUGIN_ROOT}` resolved to this plugin's root) and run it with
      the fixture piped to stdin, e.g.:
      `cat "${CLAUDE_SKILL_DIR}/fixtures/<EventName>.json" | python "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py"`
+     (that is the POSIX logger; on a Windows host the same payload goes through
+     `powershell -NoProfile -ExecutionPolicy Bypass -File "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.ps1"` —
+     hooks.json runs both halves from one command and each no-ops off-platform)
    - Capture stdout, stderr, and exit code separately for each handler.
 3. Report, per handler:
    - The exact command run.

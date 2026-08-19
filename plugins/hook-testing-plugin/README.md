@@ -67,13 +67,16 @@ plugin ships and how many live captures each event has in the session's capture 
   the desktop app's own logs (`[HostLoop] cli.js`): hook commands execute wherever
   Claude Code itself runs, which for Cowork Chat is the user's Windows machine.
   An exec-form `sh` spawn therefore fails there ("Executable not found in $PATH").
-  Hook commands must be cross-platform: this plugin uses shell-form
-  `python "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py"`, which Claude Code routes
-  to sh / Git Bash / PowerShell as appropriate — the string is valid in all three.
-  Requires `python` on PATH on every surface (true for the sandbox VM and for
-  EPLUS engineering machines; macOS hosts with only `python3` are a known gap).
+  Hook commands must be cross-platform with ZERO interpreter assumptions: the
+  single shell-form command runs `log-event.ps1` (PowerShell — the only
+  interpreter guaranteed on Windows; Claude Code auto-detects pwsh/5.1) and
+  `log-event.sh` (POSIX — guaranteed in the sandbox VM), each a no-op on the
+  other's platform, with a trailing `exit 0` valid in both shell families.
+  Verified on all three shell routes Claude Code uses: PowerShell 5.1, Git Bash,
+  and plain sh — one capture, one message, exit 0 on each.
 - **Path substitution:** reference bundled files with `${CLAUDE_PLUGIN_ROOT}`.
-- **Working-directory logging:** `scripts/log-event.py` writes to
+- **Working-directory logging:** the logger (`scripts/log-event.ps1` on Windows,
+  `scripts/log-event.sh` → `log-event.py` on POSIX) writes to
   `<working directory>/.hook-lab/events/<session_id>/<EventName>.jsonl` by default
   (`$CLAUDE_PROJECT_DIR`, else the hook's `$PWD`). The working directory is the one
   location shared by the hook runner, the session's file tools, the bash tool, and —
@@ -81,7 +84,7 @@ plugin ships and how many live captures each event has in the session's capture 
   from the host after the session ends. Set `CLAUDE_HOOKLAB_LOG_ROOT` per-machine to
   redirect captures somewhere else (e.g. a shared drive on Windows machines);
   `${CLAUDE_PLUGIN_DATA}/events` remains as a last-resort fallback.
-- **Visible but harmless by design:** `scripts/log-event.py` emits exactly one thing
+- **Visible but harmless by design:** the logger emits exactly one thing
   on stdout — `{"systemMessage": "..."}` telling the user which event fired, what
   triggered it, where it was logged, and a truncated payload excerpt. That field is
   display-only: it carries no decision fields (`permissionDecision`, `block`,

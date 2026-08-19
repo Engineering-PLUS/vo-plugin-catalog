@@ -51,22 +51,27 @@ def resolve_args(args, plugin_root: Path):
 
 def run_one_handler(command, args, fixture_bytes, cwd, env):
     # Exec form (args present): spawn the executable directly, like Claude Code.
-    # Shell form (no args): the command string goes to a shell -- Claude Code
-    # picks sh / Git Bash / PowerShell per platform; shell=True approximates
-    # that with the platform default (sh on POSIX, cmd.exe on Windows), which
-    # `python "<path>"` is valid in on all of them.
+    # Shell form (no args): the command string goes to a shell. Claude Code
+    # routes shell form to sh -c (POSIX), Git Bash (Windows with git), or
+    # PowerShell (Windows without) -- NEVER cmd.exe, so shell=True on Windows
+    # (which uses cmd.exe) would test the wrong thing. Emulate the real router.
     if args:
         invocation = [command] + args
-        use_shell = False
     else:
-        invocation = command
-        use_shell = True
+        import shutil
+        sh = shutil.which("sh")
+        if sh:
+            invocation = [sh, "-c", command]
+        else:
+            pwsh = shutil.which("pwsh") or shutil.which("powershell")
+            if not pwsh:
+                raise RuntimeError("no sh or powershell available to run shell-form hook")
+            invocation = [pwsh, "-NoProfile", "-Command", command]
     proc = subprocess.run(
         invocation,
         input=fixture_bytes,
         cwd=cwd,
         env=env,
-        shell=use_shell,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         timeout=30,
