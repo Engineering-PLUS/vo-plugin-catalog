@@ -25,17 +25,18 @@ captures each has.
 
 `scripts/log-event.sh` writes to the first of these that it can create/write to:
 
-1. `${CLAUDE_HOOKLAB_LOG_ROOT}`, if that environment variable is set.
-2. On Windows, `G:\Software\VO\plugin-logs` (native path, no drive-letter translation
-   needed).
-3. `${CLAUDE_PLUGIN_DATA}/events` — always reachable, but local to wherever the hook
-   ran. This is the only option inside **Cowork's sandboxed VM**, which cannot reach
-   any host path (including a mapped or network drive), so captures made there never
-   land in the central log and aren't retrievable once the session ends.
+1. `${CLAUDE_HOOKLAB_LOG_ROOT}`, if that environment variable is set (explicit
+   per-machine override, e.g. to point a Windows machine at a shared drive).
+2. `${CLAUDE_PROJECT_DIR}` (else the hook's `$PWD`) + `/.hook-lab/events` — the
+   session's working directory. This is the normal case everywhere, including
+   **Cowork's sandboxed VM**: the working directory is the one location shared by
+   the hook runner, this session's file tools, the bash tool, and (when a folder is
+   connected) the host, so captures are retrievable after the session ends.
+3. `${CLAUDE_PLUGIN_DATA}/events` — last resort, local to wherever the hook ran.
 
 Within whichever root wins, payloads are split into
-`<root>/<machine>/<session_id>/<EventName>.jsonl`. Determine `<machine>` the same way
-the script does — `$COMPUTERNAME`, else `$HOSTNAME`, else `hostname` — and use
+`<root>/<session_id>/<EventName>.jsonl` (no machine segment — Cowork sessions all
+report the same hostname, so the session id is what disambiguates). Use
 `${CLAUDE_SESSION_ID}` for the current session's `<session_id>` unless the user asks
 about a different one.
 
@@ -48,8 +49,9 @@ about a different one.
 `TaskCompleted`, `Stop`, `StopFailure`, `TeammateIdle`, `ConfigChange`, `CwdChanged`,
 `DirectoryAdded`, `FileChanged`, `WorktreeCreate`, `WorktreeRemove`, `PreCompact`,
 `PostCompact`, `SessionEnd`, `Elicitation`, `ElicitationResult`. Each fixture matches the
-input schema documented in `docs/hooks-ref.md` for that event (common fields plus the
-event-specific ones), with placeholder values under `/tmp/hook-lab/`.
+input schema documented in `${CLAUDE_PLUGIN_ROOT}/docs/hooks-ref.md` for that event
+(common fields plus the event-specific ones), with placeholder values under
+`/tmp/hook-lab/`.
 
 <Warning>
 `WorktreeCreate` **replaces** Claude Code's default git worktree creation. Only ever test
@@ -70,10 +72,10 @@ creation breaks for everyone with the plugin enabled.
 
 Run `ls "${CLAUDE_SKILL_DIR}/fixtures"` to show every testable event. Resolve the log
 root per "Locating the log root" above, then for each event check whether
-`<root>/<machine>/${CLAUDE_SESSION_ID}/<name>.jsonl` exists and how many lines it has
+`<root>/${CLAUDE_SESSION_ID}/<name>.jsonl` exists and how many lines it has
 (`wc -l` if present) so the user can see which events have already fired live in this
-session. Mention if you fell back to the local root and why (central root unreachable,
-typically because you're running inside Cowork's sandboxed VM).
+session. Mention which root won (override, working directory, or plugin-data
+fallback) so the user knows where captures are landing.
 
 ### 3. Fixture-replay mode
 
@@ -93,23 +95,26 @@ typically because you're running inside Cowork's sandboxed VM).
    - The exact command run.
    - Exit code.
    - Raw stdout, and whether it would be parsed as JSON (starts with `{` after trimming
-     leading whitespace, per the exit-code-0 rule in `docs/hooks-ref.md#exit-code-0`) —
-     if so, pretty-print it.
+     leading whitespace, per the exit-code-0 rule in
+     `${CLAUDE_PLUGIN_ROOT}/docs/hooks-ref.md#exit-code-0`) — if so, pretty-print it.
    - Raw stderr, if any.
    - What that output means for `<EventName>` specifically: look up the event's
-     "decision control" section in `docs/hooks-ref.md` (use the docs-lookup agent if the
-     exact section isn't already in context) and state plainly whether the tool call /
-     prompt / stop / etc. would be allowed, blocked, or left to the normal flow.
+     "decision control" section in `${CLAUDE_PLUGIN_ROOT}/docs/hooks-ref.md` and state
+     plainly whether the tool call / prompt / stop / etc. would be allowed, blocked, or
+     left to the normal flow. If that file is somehow missing from the bundle, fall
+     back to the general rule: exit 0 = allow/normal flow (stdout parsed as JSON if it
+     starts with `{`), exit 2 = block with stderr fed back to Claude, any other
+     non-zero = non-blocking warning shown to the user.
 4. Confirm the generic logger worked: resolve the log root per "Locating the log root"
-   above and check that `<root>/<machine>/${CLAUDE_SESSION_ID}/<EventName>.jsonl` grew
+   above and check that `<root>/${CLAUDE_SESSION_ID}/<EventName>.jsonl` grew
    by one line matching the fixture (`tail -n 1`).
 
 ### 4. Log-tail mode
 
 Resolve the log root per "Locating the log root" above, then run
-`tail -n 20 "<root>/<machine>/${CLAUDE_SESSION_ID}/<EventName>.jsonl"`. If the user asks
-for a different session, `ls "<root>/<machine>"` first to find its `<session_id>`. If
+`tail -n 20 "<root>/${CLAUDE_SESSION_ID}/<EventName>.jsonl"`. If the user asks
+for a different session, `ls "<root>"` first to find its `<session_id>`. If
 no matching file exists, say plainly that this event hasn't fired live yet in this
 surface (Chat or Cowork) and suggest an action that would trigger it, based on
-`docs/hooks-ref.md`'s description of when that event fires. Pretty-print each captured
-JSON line.
+`${CLAUDE_PLUGIN_ROOT}/docs/hooks-ref.md`'s description of when that event fires.
+Pretty-print each captured JSON line.

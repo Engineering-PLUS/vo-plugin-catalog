@@ -47,8 +47,8 @@ no manual step.
 
 Restart the session (or wait for the next bootstrap), then run
 `/hook-testing-plugin:hook-lab --list`. A healthy install lists every fixture the
-plugin ships and how many live captures each event has in the central log (or the
-local fallback, if the central path isn't reachable from this surface).
+plugin ships and how many live captures each event has in the session's capture log
+(under the working directory's `.hook-lab/events/`, unless overridden).
 
 ## Cowork compatibility notes
 
@@ -66,16 +66,22 @@ local fallback, if the central path isn't reachable from this surface).
 - **Sandbox isolation:** hook shell commands run in a hardened Linux VM and cannot
   reach the host machine. Keep commands POSIX-compatible.
 - **Path substitution:** reference bundled files with `${CLAUDE_PLUGIN_ROOT}`.
-- **Central logging, with a sandbox caveat:** `scripts/log-event.sh` writes to
-  `G:\Software\VO\plugin-logs\<machine>\<session_id>\<EventName>.jsonl` by default so
-  logs from every machine you test on land in one shared place. Cowork's sandboxed VM
-  cannot reach that path (or any host path), so captures made there fall back to
-  `${CLAUDE_PLUGIN_DATA}/events/<machine>/<session_id>/` **inside the VM**, which isn't
-  retrievable after the session ends — treat Cowork captures as ephemeral and pull them
-  out with `/hook-testing-plugin:hook-lab --logs <EventName>` before the session closes.
-- **Silent by design:** `scripts/log-event.sh` never prints to stdout, so it can never
-  influence a hook's decision (`permissionDecision`, `block`, `continue`, etc.) for any
-  event it's attached to — it only logs.
+- **Working-directory logging:** `scripts/log-event.sh` writes to
+  `<working directory>/.hook-lab/events/<session_id>/<EventName>.jsonl` by default
+  (`$CLAUDE_PROJECT_DIR`, else the hook's `$PWD`). The working directory is the one
+  location shared by the hook runner, the session's file tools, the bash tool, and —
+  in Cowork — the connected folder, so captures made in the sandbox are retrievable
+  from the host after the session ends. Set `CLAUDE_HOOKLAB_LOG_ROOT` per-machine to
+  redirect captures somewhere else (e.g. a shared drive on Windows machines);
+  `${CLAUDE_PLUGIN_DATA}/events` remains as a last-resort fallback.
+- **Fail-open by design:** `scripts/log-event.sh` never prints to stdout, so it can
+  never influence a hook's decision (`permissionDecision`, `block`, `continue`, etc.)
+  for any event it's attached to — it only logs. Additionally, `hooks/hooks.json`
+  invokes it through a wrapper that forces exit 0, so even a corrupted or
+  CRLF-mangled copy of the script cannot block an event (a real failure mode: see the
+  2026-08-19 Cowork field reports, where an `autocrlf` checkout turned the logger
+  into a blanket `PreToolUse` blocker under dash). `.gitattributes` pins `*.sh` to LF
+  for the same reason.
 - **Unsupported in Cowork:** background monitors and LSP servers are skipped on
   restricted hosts and are intentionally omitted here.
 
@@ -97,7 +103,7 @@ what can trigger a given event:
 
 Because the exact tool surface available to **Chat** isn't fully documented, treat the
 table above as a starting hypothesis and record what you actually observe per event in
-the central log (see below) — that log is the source of truth for which events fire in
+the capture log (see below) — that log is the source of truth for which events fire in
 which surface.
 
 ## Hook test harness (`hook-lab`)
@@ -106,12 +112,13 @@ Two complementary ways to test every hook event in isolation:
 
 1. **Live capture.** Every hook event this plugin can safely observe without changing
    its outcome is wired to `scripts/log-event.sh`, which appends the raw JSON payload to
-   `G:\Software\VO\plugin-logs\<machine>\<session_id>\<EventName>.jsonl` — a central
-   location shared across every machine you test on, so you never have to copy log
-   files around by hand. Override the root per-machine with `CLAUDE_HOOKLAB_LOG_ROOT`
-   if that drive letter or mount differs there. Just use Chat or Cowork normally and
-   inspect the logs afterward to see exactly what Claude Code sent for each event that
-   fired. `WorktreeCreate` is intentionally **not** wired live — see below.
+   `<working directory>/.hook-lab/events/<session_id>/<EventName>.jsonl` — right next
+   to whatever you were working on when the event fired, and (in Cowork) inside the
+   connected folder so it survives the session. Override the root per-machine with
+   `CLAUDE_HOOKLAB_LOG_ROOT` to centralize captures on a shared drive instead. Just
+   use Chat or Cowork normally and inspect the logs afterward to see exactly what
+   Claude Code sent for each event that fired. `WorktreeCreate` is intentionally
+   **not** wired live — see below.
 2. **Synthetic replay.** The `/hook-testing-plugin:hook-lab <EventName>` skill pipes a
    realistic fixture from `skills/hook-lab/fixtures/` directly into the configured hook
    command(s) for that event and reports the exit code, stdout, and stderr. This works

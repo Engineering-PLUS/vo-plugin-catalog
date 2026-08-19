@@ -1,0 +1,8 @@
+# Shell scripts must stay LF everywhere — Cowork's sandbox runs them under dash,
+# which aborts on CRLF (see cowork-field-reports 2026-08-19: log-event.sh became a
+# blanket PreToolUse blocker after an autocrlf=true checkout rewrote it to CRLF).
+*.sh text eol=lf
+
+# Keep JSON/MD normalized in the repo; checkout eol doesn't matter for these.
+*.json text
+*.md text
