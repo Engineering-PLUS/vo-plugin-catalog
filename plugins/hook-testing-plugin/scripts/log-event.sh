@@ -1,13 +1,15 @@
 #!/bin/sh
-# Appends every hook event's raw JSON payload to a per-session capture log under the
-# session's working directory, split into <log_root>/<session_id>/<Event>.jsonl.
+# Flight recorder + visible tracer for every hook event it's wired to:
+#   1. Appends the raw JSON payload to <log_root>/<session_id>/<Event>.jsonl
+#   2. Emits {"systemMessage": "..."} on stdout so the USER sees, in the UI,
+#      which event fired, what triggered it, where it was logged, and a
+#      truncated payload excerpt. systemMessage is display-only: it carries no
+#      decision fields, so it can never allow/deny/block anything.
 #
-# stdin  : the hook's JSON input, for any event
-# stdout : nothing, ever -- this hook only logs, so it can never influence a
-#          decision (permissionDecision, block, continue, etc.) for any event
-#          it's attached to. hooks.json additionally invokes this through a
-#          fail-open wrapper that forces exit 0, so even a corrupted copy of
-#          this file cannot block an event.
+# Set CLAUDE_HOOKLAB_QUIET to any non-empty value to silence the messages
+# (logging still happens). hooks.json additionally invokes this through a
+# fail-open wrapper that forces exit 0, so even a corrupted copy of this file
+# cannot block an event.
 #
 # Log root resolution order:
 #   1. ${CLAUDE_HOOKLAB_LOG_ROOT}  -- explicit per-machine override
@@ -44,6 +46,7 @@ if [ -n "$pyexe" ]; then
     | HOOKLAB_LOG_ROOT_OVERRIDE="${CLAUDE_HOOKLAB_LOG_ROOT:-}" \
       HOOKLAB_CWD_ROOT="$cwd_root" \
       HOOKLAB_FALLBACK_ROOT="$fallback_root" \
+      HOOKLAB_QUIET="${CLAUDE_HOOKLAB_QUIET:-}" \
       "$pyexe" -c '
 import json, os, sys
 
@@ -66,17 +69,40 @@ roots = [
     os.environ.get("HOOKLAB_FALLBACK_ROOT", ""),
 ]
 
+logged_to = ""
 for root in roots:
     if not root:
         continue
     directory = os.path.join(root, session)
     try:
         os.makedirs(directory, exist_ok=True)
-        with open(os.path.join(directory, event + ".jsonl"), "a", encoding="utf-8") as f:
+        path = os.path.join(directory, event + ".jsonl")
+        with open(path, "a", encoding="utf-8") as f:
             f.write(line)
+        logged_to = path
         break
     except Exception:
         continue
+
+# Visible trace for the user. systemMessage only -- never decision fields.
+if not os.environ.get("HOOKLAB_QUIET", ""):
+    trigger_bits = []
+    if isinstance(data, dict):
+        for key in ("tool_name", "prompt", "file_path", "source", "reason", "message", "trigger"):
+            value = data.get(key)
+            if isinstance(value, str) and value:
+                if len(value) > 80:
+                    value = value[:80] + "..."
+                trigger_bits.append(f"{key}={value}")
+    excerpt = json.dumps(data, separators=(",", ":")) if data else payload.strip()
+    if len(excerpt) > 500:
+        excerpt = excerpt[:500] + "... [truncated]"
+    msg = f"[hook-lab] {event} fired"
+    if trigger_bits:
+        msg += " (" + ", ".join(trigger_bits) + ")"
+    msg += " | logged: " + (logged_to or "NOWHERE (all log roots failed)")
+    msg += " | payload: " + excerpt
+    sys.stdout.write(json.dumps({"systemMessage": msg}))
 ' 2>/dev/null
 elif command -v jq >/dev/null 2>&1; then
   # Compact to one line for the same .jsonl-invariant reason as the python path.
@@ -87,14 +113,22 @@ elif command -v jq >/dev/null 2>&1; then
   [ -z "${event_name:-}" ] && event_name="unknown"
   [ -z "${session_id:-}" ] && session_id="unknown-session"
 
+  logged_to=""
   for root in "${CLAUDE_HOOKLAB_LOG_ROOT:-}" "$cwd_root" "$fallback_root"; do
     [ -z "$root" ] && continue
     data_dir="$root/$session_id"
     if mkdir -p "$data_dir" 2>/dev/null \
        && printf '%s\n' "$payload" >> "$data_dir/$event_name.jsonl" 2>/dev/null; then
+      logged_to="$data_dir/$event_name.jsonl"
       break
     fi
   done
+
+  if [ -z "${CLAUDE_HOOKLAB_QUIET:-}" ]; then
+    excerpt=$(printf '%s' "$payload" | cut -c1-500)
+    jq -n --arg msg "[hook-lab] $event_name fired | logged: ${logged_to:-NOWHERE (all log roots failed)} | payload: $excerpt" \
+      '{systemMessage: $msg}' 2>/dev/null
+  fi
 fi
 
 exit 0

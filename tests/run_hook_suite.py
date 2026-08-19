@@ -148,12 +148,29 @@ def main():
                 stdout_stripped = stdout_text.lstrip()
                 looks_like_json = stdout_stripped.startswith("{")
 
-                handler_ok = (code == 0 and stdout_text == "" and stderr_text == "")
+                # stdout must be empty OR a JSON object whose only key is
+                # systemMessage (display-only). Anything else -- decision
+                # fields, context injection, junk text -- is a defect in a
+                # hook that must never influence outcomes.
+                stdout_safe = True
+                if stdout_text.strip():
+                    try:
+                        stdout_obj = json.loads(stdout_text)
+                        stdout_safe = (
+                            isinstance(stdout_obj, dict)
+                            and set(stdout_obj.keys()) <= {"systemMessage"}
+                        )
+                    except Exception:
+                        stdout_safe = False
+
+                handler_ok = (code == 0 and stdout_safe and stderr_text == "")
                 if code != 0:
+                    overall_ok = False
+                elif not stdout_safe:
                     overall_ok = False
                 elif stderr_text != "":
                     # non-fatal per docs (stderr on exit 0 never reaches Claude),
-                    # but worth surfacing for a "silent logger" hook.
+                    # but worth surfacing for a display-only hook.
                     pass
 
                 handler_results.append({
@@ -161,6 +178,7 @@ def main():
                     "exit_code": code,
                     "stdout": stdout_text,
                     "stdout_is_json": looks_like_json,
+                    "stdout_safe": stdout_safe,
                     "stderr": stderr_text,
                     "handler_clean": handler_ok,
                 })
@@ -179,8 +197,11 @@ def main():
 
         log_grew_by_one = (lines_after == lines_before + 1)
 
-        if not overall_ok:
+        unsafe_stdout = any(not h.get("stdout_safe", True) for h in handler_results)
+        if any(h.get("exit_code", 0) != 0 or "error" in h for h in handler_results):
             verdict = "FAIL_HANDLER_ERROR"
+        elif unsafe_stdout:
+            verdict = "FAIL_UNSAFE_STDOUT"
         elif not log_file.exists():
             verdict = "FAIL_NO_LOG_WRITTEN"
         elif not log_grew_by_one:

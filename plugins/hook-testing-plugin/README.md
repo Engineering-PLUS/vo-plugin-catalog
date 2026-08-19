@@ -74,14 +74,19 @@ plugin ships and how many live captures each event has in the session's capture 
   from the host after the session ends. Set `CLAUDE_HOOKLAB_LOG_ROOT` per-machine to
   redirect captures somewhere else (e.g. a shared drive on Windows machines);
   `${CLAUDE_PLUGIN_DATA}/events` remains as a last-resort fallback.
-- **Fail-open by design:** `scripts/log-event.sh` never prints to stdout, so it can
-  never influence a hook's decision (`permissionDecision`, `block`, `continue`, etc.)
-  for any event it's attached to — it only logs. Additionally, `hooks/hooks.json`
-  invokes it through a wrapper that forces exit 0, so even a corrupted or
-  CRLF-mangled copy of the script cannot block an event (a real failure mode: see the
-  2026-08-19 Cowork field reports, where an `autocrlf` checkout turned the logger
-  into a blanket `PreToolUse` blocker under dash). `.gitattributes` pins `*.sh` to LF
-  for the same reason.
+- **Visible but harmless by design:** `scripts/log-event.sh` emits exactly one thing
+  on stdout — `{"systemMessage": "..."}` telling the user which event fired, what
+  triggered it, where it was logged, and a truncated payload excerpt. That field is
+  display-only: it carries no decision fields (`permissionDecision`, `block`,
+  `continue`, etc.), so it can never influence an outcome. Set
+  `CLAUDE_HOOKLAB_QUIET=1` to silence the messages (logging still happens).
+  `tests/run_hook_suite.py` enforces this invariant: any stdout that isn't a pure
+  systemMessage object fails the suite as `FAIL_UNSAFE_STDOUT`.
+- **Fail-open by design:** `hooks/hooks.json` invokes the logger through a wrapper
+  that forces exit 0, so even a corrupted or CRLF-mangled copy of the script cannot
+  block an event (a real failure mode: see the 2026-08-19 Cowork field reports, where
+  an `autocrlf` checkout turned the logger into a blanket `PreToolUse` blocker under
+  dash). `.gitattributes` pins `*.sh` to LF for the same reason.
 - **Unsupported in Cowork:** background monitors and LSP servers are skipped on
   restricted hosts and are intentionally omitted here.
 
