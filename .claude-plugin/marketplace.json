@@ -1,6 +1,6 @@
 {
   "name": "vo-claude-plugins",
-  "description": "Claude Code plugins for Engineering Plus AEC workflows",
+  "description": "Claude cowork plugins for Engineering Plus",
   "owner": {
     "name": "Victor Ortega",
     "email": "victor.ortega@eplusadvisors.com"
@@ -10,9 +10,14 @@
       "name": "hook-testing-plugin",
       "displayName": "Hook plugin testing",
       "description": "Test plugin for Engineering Plus — hooks and other internal testing",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
       "source": "./plugins/hook-testing-plugin",
-      "category": "Developer Tools",
+      "category": "development",
       "tags": ["test", "example", "internal", "hooks"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/hook-testing-plugin",
       "defaultEnabled": true
     }
   ]

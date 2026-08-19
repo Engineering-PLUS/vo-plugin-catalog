@@ -18,25 +18,10 @@ here exists purely to test hook behavior.
 Distributed through the [vo-plugin-catalog](https://github.com/Engineering-PLUS/vo-plugin-catalog)
 marketplace, which is registered under the name `vo-claude-plugins`.
 
-### Manually
-
-Add the marketplace:
-
-```bash
-claude plugin marketplace add Engineering-PLUS/vo-plugin-catalog
-```
-
-Then install the plugin:
-
-```bash
-claude plugin install hook-testing-plugin@vo-claude-plugins
-```
-
-### Automatically, via settings
-
-`extraKnownMarketplaces` only *registers* the catalog — on its own, nothing appears
-under Plugins. Pair it with `enabledPlugins` so the plugin is installed and enabled
-on startup with no manual step:
+**Bootstrap only — no terminal commands.** This plugin is delivered to Claude Desktop
+by including `extraKnownMarketplaces` and `enabledPlugins` in the bootstrap settings
+payload, not by running `claude plugin marketplace add` / `claude plugin install` in a
+terminal. That's the only installation mechanism used for testing this plugin:
 
 ```json
 {
@@ -54,12 +39,13 @@ on startup with no manual step:
 }
 ```
 
-Put this in `~/.claude/settings.json` to enable it for yourself, or in a project's
-`.claude/settings.json` to prompt teammates when they trust that folder.
+`extraKnownMarketplaces` only *registers* the catalog — on its own, nothing appears
+under Plugins. `enabledPlugins` is what installs and enables the plugin on startup with
+no manual step.
 
 ### Verifying
 
-Run `/reload-plugins` (or restart the session), then run
+Restart the session (or wait for the next bootstrap), then run
 `/hook-testing-plugin:hook-lab --list`. A healthy install lists every fixture the
 plugin ships and how many live captures each event has in the central log (or the
 local fallback, if the central path isn't reachable from this surface).
