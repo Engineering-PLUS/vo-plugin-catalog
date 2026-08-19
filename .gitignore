@@ -1,0 +1,15 @@
+# This repo tracks only the marketplace manifest (.claude-plugin/) and the
+# plugin(s) it lists (plugins/) -- neither is ignored below.
+# Local reference docs, editor settings, and helper agents stay on disk but out of git.
+docs/
+.vscode/
+.github/
+
+# Hook test harness output (live-captured event payloads, not fixtures)
+plugins/*/.claude-plugin-data/
+**/events/*.jsonl
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log
