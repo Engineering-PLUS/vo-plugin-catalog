@@ -1,175 +1,175 @@
 {
-  "description": "Generic logger wired to every hook event that's safe to observe live, for the hook-lab test harness. Each wiring goes through a fail-open wrapper (`sh -c '...; exit 0'`) so the logger can never block an event, even if the script itself is corrupted or aborts at parse time. WorktreeCreate is deliberately NOT wired here -- see README.md#hook-test-harness-hook-lab.",
+  "description": "Generic logger wired to every hook event that's safe to observe live, for the hook-lab test harness. Shell-form command (no args) so Claude Code routes it to sh / Git Bash / PowerShell per platform -- hooks run wherever Claude Code runs, which is the WINDOWS HOST in Cowork Chat (2026-08-19 field reports), so an exec-form `sh` spawn can never work there. The python script guarantees exit 0 internally. WorktreeCreate is deliberately NOT wired here -- see README.md#hook-test-harness-hook-lab.",
   "hooks": {
     "SessionStart": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "Setup": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "InstructionsLoaded": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "UserPromptSubmit": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "UserPromptExpansion": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "MessageDisplay": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PreToolUse": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PermissionRequest": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PostToolUseFailure": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PostToolBatch": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PermissionDenied": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "Notification": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "SubagentStart": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "SubagentStop": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "TaskCreated": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "TaskCompleted": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "StopFailure": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "TeammateIdle": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "ConfigChange": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "CwdChanged": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "DirectoryAdded": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "FileChanged": [
       {
         "matcher": ".env|.envrc|CLAUDE.md",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "WorktreeRemove": [
       {
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PreCompact": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "PostCompact": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "SessionEnd": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "Elicitation": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ],
     "ElicitationResult": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "sh", "args": ["-c", "sh \"$1\" 2>/dev/null; exit 0", "hook-lab-logger", "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"] }]
+        "hooks": [{ "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py\"" }]
       }
     ]
   }

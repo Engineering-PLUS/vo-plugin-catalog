@@ -11,7 +11,7 @@ here exists purely to test hook behavior.
 | Manifest  | [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) | Plugin identity and metadata |
 | Skill     | [`skills/hook-lab/SKILL.md`](skills/hook-lab/SKILL.md) | Test harness: replays a fixture through any hook event, or tails its live capture log |
 | Hooks     | [`hooks/hooks.json`](hooks/hooks.json) | Generic logger wired to every hook event that's safe to observe live |
-| Script    | [`scripts/log-event.sh`](scripts/log-event.sh) | Appends any hook event's raw JSON payload to `${CLAUDE_PLUGIN_DATA}/events/<EventName>.jsonl` |
+| Script    | [`scripts/log-event.py`](scripts/log-event.py) | Appends any hook event's JSON payload to the capture log and emits a visible `systemMessage` trace |
 
 ## Installation
 
@@ -63,10 +63,17 @@ plugin ships and how many live captures each event has in the session's capture 
   over SSH and fails with `Permission denied (publickey)` on machines without an SSH
   key. Not applicable to the relative-path layout above, but relevant if you ever add
   a plugin from an outside repo for CLI-only use.
-- **Sandbox isolation:** hook shell commands run in a hardened Linux VM and cannot
-  reach the host machine. Keep commands POSIX-compatible.
+- **Hooks run on the HOST, not in the VM (Cowork Chat):** confirmed 2026-08-19 via
+  the desktop app's own logs (`[HostLoop] cli.js`): hook commands execute wherever
+  Claude Code itself runs, which for Cowork Chat is the user's Windows machine.
+  An exec-form `sh` spawn therefore fails there ("Executable not found in $PATH").
+  Hook commands must be cross-platform: this plugin uses shell-form
+  `python "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py"`, which Claude Code routes
+  to sh / Git Bash / PowerShell as appropriate — the string is valid in all three.
+  Requires `python` on PATH on every surface (true for the sandbox VM and for
+  EPLUS engineering machines; macOS hosts with only `python3` are a known gap).
 - **Path substitution:** reference bundled files with `${CLAUDE_PLUGIN_ROOT}`.
-- **Working-directory logging:** `scripts/log-event.sh` writes to
+- **Working-directory logging:** `scripts/log-event.py` writes to
   `<working directory>/.hook-lab/events/<session_id>/<EventName>.jsonl` by default
   (`$CLAUDE_PROJECT_DIR`, else the hook's `$PWD`). The working directory is the one
   location shared by the hook runner, the session's file tools, the bash tool, and —
@@ -74,7 +81,7 @@ plugin ships and how many live captures each event has in the session's capture 
   from the host after the session ends. Set `CLAUDE_HOOKLAB_LOG_ROOT` per-machine to
   redirect captures somewhere else (e.g. a shared drive on Windows machines);
   `${CLAUDE_PLUGIN_DATA}/events` remains as a last-resort fallback.
-- **Visible but harmless by design:** `scripts/log-event.sh` emits exactly one thing
+- **Visible but harmless by design:** `scripts/log-event.py` emits exactly one thing
   on stdout — `{"systemMessage": "..."}` telling the user which event fired, what
   triggered it, where it was logged, and a truncated payload excerpt. That field is
   display-only: it carries no decision fields (`permissionDecision`, `block`,
@@ -100,7 +107,7 @@ what can trigger a given event:
 | Aspect | Chat | Cowork |
 | --- | --- | --- |
 | Tool execution | Limited/no local tool calls, so most `PreToolUse`/`PostToolUse`-family events may never fire | Runs an agentic loop with a full tool set inside a sandboxed Linux VM — tool events fire normally |
-| Shell access | Not applicable | Hook shell commands run unsandboxed but cannot reach the host machine; keep commands POSIX-compatible |
+| Shell access | Not applicable | The model's Bash tool runs inside the VM, but hook commands run on the HOST (see Cowork compatibility notes) — two different machines, two different filesystems |
 | Personal skills (`~/.claude/skills`) | Not read on your machine | Not read either — Cowork loads only skills enabled for your claude.ai account plus the repo's committed `.claude/skills/` |
 | Skill `!` shell injection | N/A | Replaced with a `[shell command execution disabled by policy]` placeholder for **synced** skills; a plugin skill's own dynamic context still runs |
 | `permission_prompt` notification timing | Routed through the Agent SDK `canUseTool` callback (Desktop hosts Claude Code this way) — fires ~6s after the ask, not deferred by typing | Same Agent SDK routing applies |
@@ -116,7 +123,7 @@ which surface.
 Two complementary ways to test every hook event in isolation:
 
 1. **Live capture.** Every hook event this plugin can safely observe without changing
-   its outcome is wired to `scripts/log-event.sh`, which appends the raw JSON payload to
+   its outcome is wired to `scripts/log-event.py`, which appends the raw JSON payload to
    `<working directory>/.hook-lab/events/<session_id>/<EventName>.jsonl` — right next
    to whatever you were working on when the event fired, and (in Cowork) inside the
    connected folder so it survives the session. Override the root per-machine with

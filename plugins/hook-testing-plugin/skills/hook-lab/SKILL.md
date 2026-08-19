@@ -3,7 +3,7 @@ name: hook-lab
 description: Test a single Claude Code hook event in isolation, either by replaying a synthetic JSON fixture through its configured hook command(s), or by tailing the live capture log. Use when verifying hook input/output schemas, permission decisions, or additionalContext behavior without needing to organically trigger the event in a live Chat or Cowork session.
 argument-hint: "[EventName] | --logs [EventName] | --list"
 disable-model-invocation: true
-allowed-tools: Bash(cat ${CLAUDE_SKILL_DIR}/fixtures/*), Bash(ls *), Bash(find *), Bash(hostname), Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh), Bash(tail *)
+allowed-tools: Bash(cat ${CLAUDE_SKILL_DIR}/fixtures/*), Bash(ls *), Bash(find *), Bash(hostname), Bash(python ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py), Bash(tail *)
 ---
 
 # Hook Lab
@@ -23,16 +23,19 @@ captures each has.
 
 ## Locating the log root
 
-`scripts/log-event.sh` writes to the first of these that it can create/write to:
+`scripts/log-event.py` writes to the first of these that it can create/write to.
+Remember hooks execute wherever Claude Code itself runs — the user's HOST machine
+in Cowork Chat, not the sandbox VM — so the resolved root may be a host path.
 
 1. `${CLAUDE_HOOKLAB_LOG_ROOT}`, if that environment variable is set (explicit
    per-machine override, e.g. to point a Windows machine at a shared drive).
-2. `${CLAUDE_PROJECT_DIR}` (else the hook's `$PWD`) + `/.hook-lab/events` — the
-   session's working directory. This is the normal case everywhere, including
-   **Cowork's sandboxed VM**: the working directory is the one location shared by
-   the hook runner, this session's file tools, the bash tool, and (when a folder is
-   connected) the host, so captures are retrievable after the session ends.
-3. `${CLAUDE_PLUGIN_DATA}/events` — last resort, local to wherever the hook ran.
+2. `${CLAUDE_PROJECT_DIR}` + `/.hook-lab/events`, when that variable is set.
+3. Cowork-VM mount autodetect: when `$HOME/mnt` exists (the VM's layout), the
+   first writable non-internal folder under it (i.e. the connected folder)
+   + `/.hook-lab/events` — because in the VM, `$PWD` is the VM-private `$HOME`,
+   not the connected folder.
+4. The hook's `$PWD` + `/.hook-lab/events` — the normal case on hosts and CLI.
+5. `${CLAUDE_PLUGIN_DATA}/events` — last resort, local to wherever the hook ran.
 
 Within whichever root wins, payloads are split into
 `<root>/<session_id>/<EventName>.jsonl` (no machine segment — Cowork sessions all
@@ -89,7 +92,7 @@ fallback) so the user knows where captures are landing.
    - Reconstruct the exact shell invocation Claude Code would run (its `command` and
      `args`, with `${CLAUDE_PLUGIN_ROOT}` resolved to this plugin's root) and run it with
      the fixture piped to stdin, e.g.:
-     `cat "${CLAUDE_SKILL_DIR}/fixtures/<EventName>.json" | sh "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh"`
+     `cat "${CLAUDE_SKILL_DIR}/fixtures/<EventName>.json" | python "${CLAUDE_PLUGIN_ROOT}/scripts/log-event.py"`
    - Capture stdout, stderr, and exit code separately for each handler.
 3. Report, per handler:
    - The exact command run.

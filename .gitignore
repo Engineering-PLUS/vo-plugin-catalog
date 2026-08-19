@@ -11,3 +11,6 @@
 /docs/
 /.vscode/
 /.github/agents/
+
+# local scratch notes
+/CIRCLE-BACK.md

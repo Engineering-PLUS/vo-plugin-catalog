@@ -50,11 +50,23 @@ def resolve_args(args, plugin_root: Path):
 
 
 def run_one_handler(command, args, fixture_bytes, cwd, env):
+    # Exec form (args present): spawn the executable directly, like Claude Code.
+    # Shell form (no args): the command string goes to a shell -- Claude Code
+    # picks sh / Git Bash / PowerShell per platform; shell=True approximates
+    # that with the platform default (sh on POSIX, cmd.exe on Windows), which
+    # `python "<path>"` is valid in on all of them.
+    if args:
+        invocation = [command] + args
+        use_shell = False
+    else:
+        invocation = command
+        use_shell = True
     proc = subprocess.run(
-        [command] + args,
+        invocation,
         input=fixture_bytes,
         cwd=cwd,
         env=env,
+        shell=use_shell,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         timeout=30,
@@ -131,7 +143,7 @@ def main():
             for handler in group.get("hooks", []):
                 if handler.get("type") != "command":
                     continue
-                command = handler["command"]
+                command = handler["command"].replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))
                 args = resolve_args(handler.get("args", []), plugin_root)
                 try:
                     code, out, err = run_one_handler(command, args, fixture_bytes, str(event_workdir), env)
