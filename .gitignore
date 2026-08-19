@@ -1,3 +1,13 @@
 # hook-lab live-capture logs (written to the working directory by log-event.sh)
 .hook-lab/
-docs/claude-plugins-official/
+
+# Local-only working material: reference docs (including the vendored
+# claude-plugins-official clone), editor settings, and local agent definitions.
+# None of it is part of the published catalog.
+#
+# All three are anchored with a leading slash so they match only at the repo root.
+# Without the anchor, "docs/" would also swallow plugins/*/docs/ -- and the
+# hook-testing-plugin ships its own tracked docs/hooks-ref.md.
+/docs/
+/.vscode/
+/.github/agents/
