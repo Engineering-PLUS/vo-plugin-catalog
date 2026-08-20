@@ -19,6 +19,20 @@
       "tags": ["test", "example", "internal", "hooks"],
       "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/hook-testing-plugin",
       "defaultEnabled": true
+    },
+    {
+      "name": "eplus-guardrails",
+      "displayName": "EPLUS Guardrails",
+      "description": "Prestaged production hooks for EPLUS Cowork deployment — delete gating and tool-failure reporting",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "source": "./plugins/eplus-guardrails",
+      "category": "development",
+      "tags": ["internal", "hooks", "guardrails", "production"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/eplus-guardrails",
+      "defaultEnabled": true
     }
   ]
 }

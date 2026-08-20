@@ -1,0 +1,9 @@
+{
+  "name": "eplus-guardrails",
+  "version": "0.1.0",
+  "description": "Prestaged production hooks for EPLUS Cowork deployment — delete gating and tool-failure reporting, graduated from hook-testing-plugin field testing",
+  "author": {
+    "name": "Victor Ortega",
+    "email": "victor.ortega@eplusadvisors.com"
+  }
+}
