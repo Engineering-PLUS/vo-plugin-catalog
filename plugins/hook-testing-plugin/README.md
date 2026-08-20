@@ -84,14 +84,38 @@ plugin ships and how many live captures each event has in the session's capture 
   from the host after the session ends. Set `CLAUDE_HOOKLAB_LOG_ROOT` per-machine to
   redirect captures somewhere else (e.g. a shared drive on Windows machines);
   `${CLAUDE_PLUGIN_DATA}/events` remains as a last-resort fallback.
-- **Visible but harmless by design:** the logger emits exactly one thing
-  on stdout — `{"systemMessage": "..."}` telling the user which event fired, what
-  triggered it, where it was logged, and a truncated payload excerpt. That field is
-  display-only: it carries no decision fields (`permissionDecision`, `block`,
-  `continue`, etc.), so it can never influence an outcome. Set
-  `CLAUDE_HOOKLAB_QUIET=1` to silence the messages (logging still happens).
-  `tests/run_hook_suite.py` enforces this invariant: any stdout that isn't a pure
-  systemMessage object fails the suite as `FAIL_UNSAFE_STDOUT`.
+- **Visible but harmless by design — three channels:** the logger's stdout
+  carries display/context output only, never decision fields
+  (`permissionDecision`, `block`, `continue`, etc.), so it can never influence
+  an outcome. The channels (per the beautiful-vigilant-bohr field report:
+  Cowork transcribes hook `systemMessage` as `hook_system_message` attachments
+  but never renders them, and the model never sees them):
+  1. `systemMessage` — inline tracer for terminal surfaces
+     (`CLAUDE_HOOKLAB_QUIET=1` silences it).
+  2. `additionalContext` relay — tracers queue in
+     `<root>/<session>/pending-relay.txt`; events that support context
+     injection (SessionStart, Setup, SubagentStart, UserPromptSubmit,
+     UserPromptExpansion, PreToolUse, PostToolUse, PostToolUseFailure — NOT
+     Stop/SubagentStop, whose additionalContext keeps the turn alive) drain the
+     queue and instruct the assistant to echo the tracer lines in a fenced
+     `hook-lab` block at the top of its visible reply
+     (`CLAUDE_HOOKLAB_NO_RELAY=1` disables).
+  3. `displayContent` banner — MessageDisplay (index 0) drains
+     `pending-banner.txt` into a `[[hook-lab]] N event(s): ...` line prepended
+     to the rendered message; display-only, invisible to the model and the
+     transcript (`CLAUDE_HOOKLAB_NO_BANNER=1` disables).
+  4. SessionStart extras: `initialUserMessage` injects a synthetic first USER
+     turn (documented for `-p`/SDK surfaces — how Cowork hosts Claude Code) so
+     the assistant visibly acknowledges the hook; note this makes the harness
+     non-passive at session start (`CLAUDE_HOOKLAB_NO_INITMSG=1` disables).
+     `sessionTitle` stamps the session title `hook-lab <source> <session8>` —
+     rendered by the UI with zero model involvement, so a changed title alone
+     proves SessionStart fired; never overwrites an existing user-set title
+     (`CLAUDE_HOOKLAB_NO_TITLE=1` disables).
+  `tests/run_hook_suite.py` enforces the no-decision-fields invariant: stdout
+  limited to `systemMessage` + `hookSpecificOutput.{hookEventName,
+  additionalContext, displayContent}`, anything else fails as
+  `FAIL_UNSAFE_STDOUT`.
 - **Fail-open by design:** `hooks/hooks.json` invokes the logger through a wrapper
   that forces exit 0, so even a corrupted or CRLF-mangled copy of the script cannot
   block an event (a real failure mode: see the 2026-08-19 Cowork field reports, where

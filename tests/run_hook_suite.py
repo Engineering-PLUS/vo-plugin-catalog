@@ -165,18 +165,36 @@ def main():
                 stdout_stripped = stdout_text.lstrip()
                 looks_like_json = stdout_stripped.startswith("{")
 
-                # stdout must be empty OR a JSON object whose only key is
-                # systemMessage (display-only). Anything else -- decision
-                # fields, context injection, junk text -- is a defect in a
-                # hook that must never influence outcomes.
+                # stdout must be empty OR a JSON object limited to display/
+                # context fields: top-level systemMessage, plus
+                # hookSpecificOutput carrying only hookEventName +
+                # additionalContext (relay channel) or displayContent
+                # (MessageDisplay banner). Decision fields -- decision,
+                # permissionDecision, continue, updatedInput, etc. -- or junk
+                # text remain defects in a hook that must never influence
+                # outcomes. (Channels added per beautiful-vigilant-bohr
+                # field report: Cowork never renders systemMessage.)
                 stdout_safe = True
                 if stdout_text.strip():
                     try:
                         stdout_obj = json.loads(stdout_text)
                         stdout_safe = (
                             isinstance(stdout_obj, dict)
-                            and set(stdout_obj.keys()) <= {"systemMessage"}
+                            and set(stdout_obj.keys()) <= {"systemMessage", "hookSpecificOutput"}
                         )
+                        if stdout_safe and "hookSpecificOutput" in stdout_obj:
+                            hso = stdout_obj["hookSpecificOutput"]
+                            stdout_safe = (
+                                isinstance(hso, dict)
+                                and set(hso.keys()) <= {
+                                    "hookEventName", "additionalContext", "displayContent",
+                                    # SessionStart visibility experiments: a user
+                                    # turn and a UI title, not decision control.
+                                    "initialUserMessage", "sessionTitle",
+                                }
+                            )
+                            if stdout_safe and ("initialUserMessage" in hso or "sessionTitle" in hso):
+                                stdout_safe = stdout_obj["hookSpecificOutput"]["hookEventName"] == "SessionStart"
                     except Exception:
                         stdout_safe = False
 
