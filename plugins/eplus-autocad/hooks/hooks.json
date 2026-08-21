@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"eplus-autocad plugin active: the autocad MCP server should be available. Load the cad-workflow skill and call get_cad_status before any drawing work. All inspection runs on clones of the last save; originals are never opened for write.\"}}'",
+            "statusMessage": "Preparing EPLUS AutoCAD environment..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^mcp__(plugin_eplus-autocad_)?autocad__(select_in_session|open_for_editing)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"ask\", \"permissionDecisionReason\": \"Session-touching CAD tool: select_in_session sends a command into the engineer'\\''s live session; open_for_editing launches Civil 3D (a license seat).\"}}'",
+            "statusMessage": "Confirming session-touching CAD action..."
+          }
+        ]
+      }
+    ]
+  }
+}

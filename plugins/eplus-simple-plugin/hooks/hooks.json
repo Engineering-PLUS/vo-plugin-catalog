@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"eplus-simple-plugin is loaded in the Cowork VM. AEC_PROJECT_STAGE=drafting.\"}}'",
+            "statusMessage": "Initializing EPLUS AEC environment..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(grep *)",
+            "command": "echo '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"additionalContext\": \"Reminder: always use AEC standard layer naming for exports.\"}}'"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "^eplus-simple-plugin:project-folder-inspector$",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Starting project folder inspection...",
+            "command": "mkdir -p \"${CLAUDE_PLUGIN_DATA}\" && { cat; echo; } >> \"${CLAUDE_PLUGIN_DATA}/subagent-activity.log\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^eplus-simple-plugin:project-folder-inspector$",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Recording inspection result...",
+            "command": "mkdir -p \"${CLAUDE_PLUGIN_DATA}\" && { cat; echo; } >> \"${CLAUDE_PLUGIN_DATA}/subagent-activity.log\""
+          }
+        ]
+      }
+    ]
+  }
+}

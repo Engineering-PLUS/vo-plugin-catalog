@@ -49,6 +49,52 @@
       "category": "productivity",
       "homepage": "https://github.com/anthropics/claude-plugins-official/tree/main/plugins/session-report",
       "defaultEnabled": false
+    },
+    {
+      "name": "eplus-simple-plugin",
+      "displayName": "EPLUS Simple Plugin",
+      "description": "Test plugin for Engineering Plus",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "version": "1.0.2",
+      "source": "./plugins/eplus-simple-plugin",
+      "category": "development",
+      "tags": ["internal", "test"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/eplus-simple-plugin",
+      "defaultEnabled": false
+    },
+    {
+      "name": "eplus-autocad",
+      "displayName": "EPLUS AutoCAD",
+      "description": "AutoCAD MCP server plus the skills and hooks that teach Claude the EPLUS CAD workflow",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "keywords": ["mcp"],
+      "version": "0.2.1",
+      "source": "./plugins/eplus-autocad",
+      "category": "development",
+      "tags": ["internal", "mcp", "cad"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/eplus-autocad",
+      "defaultEnabled": false
+    },
+    {
+      "name": "document-extraction-engine",
+      "displayName": "Document Extraction Engine",
+      "description": "Enterprise document extraction — bundled HTTP client for the Document Analysis engine, a Haiku extraction subagent, and the document-extraction skill",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "version": "0.3.0",
+      "source": "./plugins/document-extraction-engine",
+      "category": "development",
+      "tags": ["internal", "documents"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/document-extraction-engine",
+      "defaultEnabled": false
     }
   ]
 }
