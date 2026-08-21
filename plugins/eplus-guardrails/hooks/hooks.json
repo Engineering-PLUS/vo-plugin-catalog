@@ -1,14 +1,6 @@
 {
   "description": "Prestaged production hooks for EPLUS Cowork deployment. Each wiring uses the polyglot shell-form pattern proven in hook-testing-plugin field testing (2026-08-19/20): the .ps1 half runs on Windows hosts (where hooks execute in Cowork Chat), the .sh half on POSIX surfaces, each no-ops on the other's platform, and the trailing `exit 0` is valid in every shell Claude Code routes to.",
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/delete-gate.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/delete-gate.sh\"; exit 0" }
-        ]
-      }
-    ],
     "PostToolUseFailure": [
       {
         "matcher": "*",

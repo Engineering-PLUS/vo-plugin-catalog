@@ -39,8 +39,7 @@
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh\"; exit 0" },
-          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/allow-canary.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/allow-canary.sh\"; exit 0" }
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh\"; exit 0" }
         ]
       }
     ],

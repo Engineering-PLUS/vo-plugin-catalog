@@ -11,23 +11,6 @@ shell-form command, each half no-opping on the other's platform.
 
 ## Hooks
 
-### Delete gate (`PreToolUse`)
-
-When a tool command looks like it deletes files or directories, returns
-`permissionDecision: "ask"` with a reason naming the matched token and the
-command — forcing the permission prompt even under lax default permissions.
-It gates for confirmation; it never hard-denies.
-
-- Patterns: `rm`, `rmdir`, `unlink`, `shred`, `rimraf`, `del`, `erase`, `rd`,
-  `ri`, `Remove-Item`, `[IO.File]::Delete` / `[IO.Directory]::Delete`,
-  `git clean`, `find ... -delete` (word-boundary matched, case-insensitive).
-- **Fail-open:** unparseable payload, missing command field, missing python on
-  a POSIX surface, or any internal error → no output, normal permission flow.
-  A broken gate must never lock anyone out of their session.
-- Disable per-machine: `EPLUS_GUARDRAILS_NO_DELETE_GATE=1`.
-- Scripts: `scripts/delete-gate.ps1` (host), `scripts/delete-gate.sh` →
-  `delete-gate.py` (POSIX).
-
 ### Tool-failure reporter (`PostToolUseFailure`)
 
 When any tool call fails, injects `additionalContext` nudging the model to
@@ -42,11 +25,10 @@ it. Never derails the main task.
 - Scripts: `scripts/report-tool-failure.ps1` (host),
   `scripts/report-tool-failure.sh` (POSIX, pure sh — no python needed).
 
-## Known interaction (intentional, for testing)
+## Removed hooks
 
-`hook-testing-plugin` carries a PreToolUse **allow-canary** that returns
-`permissionDecision: "allow"` for commands containing
-`hooklab-precedence-canary`. Running a delete command containing that token
-(e.g. `rm hooklab-precedence-canary.txt`) makes this plugin say **ask** while
-hook-lab says **allow** — the multi-plugin precedence experiment. Expected
-per docs: the more restrictive decision wins (deny > ask > allow).
+A **delete gate** (`PreToolUse` → `permissionDecision: "ask"` on delete-shaped
+commands) was field-tested and removed 2026-08-20: Cowork already applies its
+own internal guardrail to delete operations, so the hook produced a redundant
+**second** permission prompt for the same action. The internal guardrail is
+sufficient.

@@ -114,19 +114,6 @@ plugin ships and how many live captures each event has in the session's capture 
      field-tested as NOT visibly honored in Cowork (auto-titler wins); kept for
      other surfaces (`CLAUDE_HOOKLAB_NO_TITLE=1` disables).
 
-## Precedence experiment (allow-canary)
-
-A second `PreToolUse` handler (`scripts/allow-canary.ps1` / `.sh`) returns
-`permissionDecision: "allow"` for any command containing
-`hooklab-precedence-canary`, and stays inert otherwise. The `eplus-guardrails`
-plugin's delete gate returns `"ask"` for delete commands — so running
-`rm hooklab-precedence-canary.txt` in a session with both plugins enabled
-makes two plugins disagree on the same tool call. Docs predict the more
-restrictive decision wins (deny > ask > allow); this canary exists to verify
-that live.
-
-Production hooks (the tool-failure reporter, the delete gate) live in the
-`eplus-guardrails` plugin — hooks graduate there once field-tested here.
   `tests/run_hook_suite.py` enforces the no-decision-fields invariant: stdout
   limited to `systemMessage` + `hookSpecificOutput.{hookEventName,
   additionalContext, displayContent}`, anything else fails as

@@ -1,9 +1,0 @@
-{
-  "name": "hook-testing-plugin",
-  "version": "1.7.0",
-  "description": "Test plugin for Engineering Plus — hooks and other internal testing",
-  "author": {
-    "name": "Victor Ortega",
-    "email": "victor.ortega@eplusadvisors.com"
-  }
-}
