@@ -1,0 +1,13 @@
+{
+  "description": "Tool-name probe for the managed-MCP experiment. A PreToolUse hook echoes the EXACT tool name whenever report_issue is invoked, so the managed-server tool name (mcp__<server>__report_issue) can be compared against the plugin-bundled form (mcp__plugin_<plugin>_<server>__report_issue). Polyglot host/VM invocation; context-only, never blocks a call. This plugin bundles NO MCP server — the error-reporting server is supplied via bootstrap managedMcpServers.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/tool-name-probe.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/tool-name-probe.sh\"; exit 0" }
+        ]
+      }
+    ]
+  }
+}

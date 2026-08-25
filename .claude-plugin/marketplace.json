@@ -95,6 +95,21 @@
       "tags": ["internal", "documents"],
       "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/document-extraction-engine",
       "defaultEnabled": false
+    },
+    {
+      "name": "error-reporting-managed",
+      "displayName": "Error Reporting (managed-server test)",
+      "description": "Test copy of error-reporting with no bundled .mcp.json — the server comes from bootstrap managedMcpServers. A PreToolUse hook echoes the exact report_issue tool name to compare managed vs bundled MCP naming.",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "version": "0.1.0",
+      "source": "./plugins/error-reporting-managed",
+      "category": "development",
+      "tags": ["internal", "test", "mcp", "secrets"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/error-reporting-managed",
+      "defaultEnabled": false
     }
   ]
 }
