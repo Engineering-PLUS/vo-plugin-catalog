@@ -29,8 +29,28 @@ returns.
 
 | Path | Purpose |
 |---|---|
-| `agents/punch-researcher.md` | The subagent: `model: haiku`, tools scoped to `mcp__eplus-punch-engine` + `Read`, with the full punch query workflow (tool routing, filter vocabulary, failure protocol) in its body. Returns a concise summary, never a raw dump. |
+| `agents/punch-researcher.md` | The subagent: `model: haiku`, tools scoped to the punch server (`mcp__punch-query`, `mcp__eplus-punch-engine`) + `Read`, with the full punch query workflow (tool routing, filter vocabulary, failure protocol) in its body. Returns a concise summary, never a raw dump. |
 | `skills/punch/SKILL.md` | Main-facing skill: triggers on punch topics and **delegates** to `punch-researcher`. It contains no query workflow, so the main model can't do the lookups inline. |
+| `hooks/hooks.json` + `scripts/show-subagent-final.py` | `SubagentStop` hook that surfaces the subagent's FINAL message to you (see below). |
+
+## Seeing the subagent's final message
+
+Cowork shows that a subagent was spawned and running, but its own final message
+isn't rendered inline — you only see the main model's paraphrase. The
+`SubagentStop` hook fixes that: when `punch-researcher` finishes, it reads
+`last_assistant_message` (provided directly in the SubagentStop input) and emits
+it as a **`systemMessage`**, which renders as a visible hook block in the chat.
+
+- **`systemMessage` only** — never `additionalContext` (which reads as prompt
+  injection on a stop/tool turn and can be classifier-blocked) or any decision
+  field. It just displays.
+- **Scoped** to `^punch-subagent:punch-researcher$` so it doesn't echo every
+  Explore/Plan subagent. Broaden the matcher to `"*"` to show every subagent's
+  final message.
+- Disable with `EPLUS_NO_SUBAGENT_ECHO=1`.
+- Full transcript (reasoning + tool calls) is always available regardless, via
+  `/tasks` → the subagent row → Enter, or in the export at
+  `<session>/subagents/agent-<id>.jsonl`.
 
 Deliberately **not** copied from the production `eplus-punch-reports` plugin:
 its `.mcp.json` (carries the shared bearer token — kept out of this repo), its
@@ -39,14 +59,14 @@ a delegation test, not the full report pipeline.
 
 ## Requirement: managed punch server
 
-This plugin bundles no MCP server. The `eplus-punch-engine` server must be
-available to the session as a bootstrap **managed** server (same pattern as
+This plugin bundles no MCP server. The punch engine must be available to the
+session as a bootstrap **managed** server (same pattern as
 `error-reporting-managed`), so the token never enters this repo:
 
 ```json
 {
   "managedMcpServers": [
-    { "name": "eplus-punch-engine", "transport": "sse",
+    { "name": "punch-query", "transport": "sse",
       "url": "http://20.9.42.66:8653/sse",
       "headers": { "Authorization": "Bearer <token>" } }
   ],
@@ -54,16 +74,21 @@ available to the session as a bootstrap **managed** server (same pattern as
 }
 ```
 
-The subagent's `tools: mcp__eplus-punch-engine` assumes the managed server name
-`eplus-punch-engine` (tools resolve as `mcp__eplus-punch-engine__*`). If the
-server is delivered bundled instead, the tool prefix differs
-(`mcp__plugin_<plugin>_eplus-punch-engine__*`) and the subagent's `tools` list
-would need to match.
+**The managed server's `name` determines the tool prefix**, and the subagent's
+`tools` allowlist must include it — this is the exact bug the first test hit
+(2026-08-25): the server was named `punch-query` (tools `mcp__punch-query__*`)
+while the subagent allowlisted only `mcp__eplus-punch-engine`, so it saw no
+punch tools. The subagent now allowlists **both** names
+(`tools: mcp__punch-query, mcp__eplus-punch-engine`), so either managed name
+works. If you use a third name, add `mcp__<that-name>` to the subagent's
+`tools`. (Bundled delivery would be `mcp__plugin_<plugin>_<server>__*` — a third
+prefix.)
 
 ## Test procedure (Cowork machine)
 
-1. Ensure `eplus-punch-engine` is available as a managed server (above), with
-   `20.9.42.66` in `coworkEgressAllowedHosts`.
+1. Ensure the punch engine is available as a managed server (above, named
+   `punch-query` or `eplus-punch-engine`), with `20.9.42.66` in
+   `coworkEgressAllowedHosts`.
 2. Enable `punch-subagent` (it's `defaultEnabled: false`).
 3. Ask a punch question, e.g. *"how many open Telecom items on POR03B?"* or
    *"what do we usually find on a security walk?"*

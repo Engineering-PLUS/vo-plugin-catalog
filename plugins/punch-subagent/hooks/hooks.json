@@ -1,0 +1,13 @@
+{
+  "description": "Surfaces the punch-researcher subagent's FINAL message to the user on SubagentStop. Cowork otherwise shows only that the subagent ran; this echoes its last_assistant_message (provided directly in the SubagentStop input) as a systemMessage, which renders as a visible hook block. systemMessage only -- never additionalContext or decision fields. Single python command (no shell polyglot). Matcher is scoped to this plugin's subagent; broaden to \"*\" to echo every subagent's final message. Disable with EPLUS_NO_SUBAGENT_ECHO=1.",
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "^punch-subagent:punch-researcher$",
+        "hooks": [
+          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/show-subagent-final.py\"" }
+        ]
+      }
+    ]
+  }
+}

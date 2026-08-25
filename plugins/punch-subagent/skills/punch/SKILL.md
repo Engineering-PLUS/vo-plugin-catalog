@@ -35,15 +35,18 @@ one, so it keeps its context.
 
 ## What NOT to do
 
-- Don't call `mcp__eplus-punch-engine__*` tools directly from the main
-  conversation — that's the subagent's job and defeats the context savings.
+- Don't call the punch tools (`mcp__punch-query__*` /
+  `mcp__eplus-punch-engine__*`) directly from the main conversation — that's the
+  subagent's job and defeats the context savings.
 - Don't answer punch questions from general construction knowledge. If the
   subagent reports the database was unreachable, relay that plainly and offer
   to retry; never fabricate a "recurring issues" list.
 
 ## Requirement
 
-The `eplus-punch-engine` MCP server must be available to the session (as a
-bootstrap **managed** server — this plugin bundles no `.mcp.json` and no token).
-The subagent inherits those tools. Without it, the subagent will report that the
-punch database can't be reached.
+The punch MCP server must be available to the session as a bootstrap **managed**
+server (this plugin bundles no `.mcp.json` and no token). The subagent inherits
+those tools. Its `tools` allowlist accepts either managed server name —
+`punch-query` or `eplus-punch-engine` — so whichever you deploy, the subagent
+gets the tools. Without the server, the subagent reports the punch database
+can't be reached.
