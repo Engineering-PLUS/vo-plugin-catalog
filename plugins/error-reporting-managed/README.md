@@ -17,10 +17,23 @@ the skills/hooks that reference it by name).
 | Bundled in a plugin's `.mcp.json` (production error-reporting) | `mcp__plugin_error-reporting_error-reporting__report_issue` |
 | Bootstrap `managedMcpServers` (this test) | `mcp__error-reporting__report_issue` |
 
-The `tool-name-probe` `PreToolUse` hook echoes the **exact** tool name whenever
-`report_issue` is invoked (via `additionalContext`, which renders in Cowork),
-so the difference is observable in the reply. Disable it with
-`EPLUS_NO_TOOLNAME_PROBE=1`.
+The `tool-name-probe` `PreToolUse` hook prints the **exact** tool name whenever
+`report_issue` is invoked, as a **`systemMessage`** — which renders directly in
+the chat as a hook code block. Disable it with `EPLUS_NO_TOOLNAME_PROBE=1`.
+
+> **Why systemMessage and not additionalContext:** an earlier version injected
+> an imperative `additionalContext` ("quote this verbatim…"). On a PreToolUse
+> turn that reads as prompt injection: the **auto-mode classifier blocked the
+> `report_issue` call outright** ("Blocked by classifier"), and the model
+> independently flagged it as an injected instruction (observed 2026-08-25, two
+> session exports). `systemMessage` carries no instruction to the model, so it
+> is safe and still visible.
+
+> **Single-interpreter command:** the hook runs `python <script>` directly, not
+> a `powershell …; sh …` polyglot. PowerShell 5.1 can't suppress a
+> "command not found" for the foreign interpreter, so a polyglot leaves a
+> `'sh' is not recognized` line on every call on a Windows host. One `python`
+> command avoids that entirely (requires python on PATH — host and VM).
 
 ## Bootstrap config to add (managedMcpServers)
 

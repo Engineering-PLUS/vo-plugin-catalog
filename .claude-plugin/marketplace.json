@@ -110,6 +110,21 @@
       "tags": ["internal", "test", "mcp", "secrets"],
       "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/error-reporting-managed",
       "defaultEnabled": false
+    },
+    {
+      "name": "punch-subagent",
+      "displayName": "Punch Subagent (delegation test)",
+      "description": "Subagent-delegation test: routes every punch request to a Haiku punch-researcher subagent so verbose corpus output stays out of the main context and costs drop. No bundled MCP/token; needs a managed eplus-punch-engine server.",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "version": "0.1.0",
+      "source": "./plugins/punch-subagent",
+      "category": "development",
+      "tags": ["internal", "test", "subagent", "punch"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/punch-subagent",
+      "defaultEnabled": false
     }
   ]
 }
