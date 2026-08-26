@@ -5,7 +5,7 @@ control, using the EPLUS punch corpus as the workload.
 
 Instead of querying the punch database in the main conversation, the plugin's
 `punch` skill routes every punch request to a **`punch-researcher`** subagent
-that does the lookups in its own isolated context on **Haiku**, and returns
+that does the lookups in its own isolated context on **Sonnet 5**, and returns
 only a concise summary.
 
 ## Why the punch corpus is a good subagent test
@@ -21,17 +21,19 @@ Punch lookups are verbose (measured against the live corpus):
 | `query_hermes_punch` (limit 25) | 9,800 |
 
 Running those inline dumps raw item rows and expiring photo links into the main
-context — on whatever (more expensive) model the session uses. Delegating keeps
-that volume in the subagent and runs it on a cheaper model. Only the summary
-returns.
+context. Delegating keeps that volume in the subagent — only the summary
+returns. The subagent runs on **Sonnet 5**: context isolation is the main win
+(model-independent), and Sonnet's recall is reliable for the complete-citation
+searches a punch report needs. (An earlier Haiku version was cheaper but
+field-tested as missing items on exhaustive precedent searches — 2026-08-25.)
 
 ## What's here (deliberately lean)
 
 | Path | Purpose |
 |---|---|
-| `agents/punch-researcher.md` | The subagent: `model: haiku`, tools scoped to the punch server (`mcp__punch-query`, `mcp__eplus-punch-engine`) + `Read`, with the full punch query workflow (tool routing, filter vocabulary, failure protocol) in its body. Returns a concise summary, never a raw dump. |
+| `agents/punch-researcher.md` | The subagent: `model: sonnet`, tools scoped to the punch server (`mcp__punch-query`, `mcp__eplus-punch-engine`) + `Read`, with the full punch query workflow (tool routing, filter vocabulary, failure protocol) in its body. Returns a concise summary, never a raw dump. |
 | `skills/punch/SKILL.md` | Main-facing skill: triggers on punch topics and **delegates** to `punch-researcher`. It contains no query workflow, so the main model can't do the lookups inline. |
-| `hooks/hooks.json` + `scripts/show-subagent-final.py` | `SubagentStop` hook that surfaces the subagent's FINAL message to you (see below). |
+| `hooks/hooks.json` + `scripts/show-subagent-final.ps1` | `SubagentStop` hook (pure PowerShell) that surfaces the subagent's FINAL message to you (see below). |
 
 ## Seeing the subagent's final message
 
@@ -95,7 +97,7 @@ prefix.)
 4. **Observe:**
    - Claude delegates to `punch-researcher` (a subagent row appears) rather
      than calling the punch tools itself.
-   - The subagent runs on Haiku (cheaper), and the verbose corpus output stays
+   - The subagent runs on Sonnet 5, and the verbose corpus output stays
      in its context — the main thread receives only the summary.
    - The answer is grounded in real items (cited `PROJECT-number`), not general
      construction knowledge.

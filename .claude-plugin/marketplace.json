@@ -114,16 +114,31 @@
     {
       "name": "punch-subagent",
       "displayName": "Punch Subagent (delegation test)",
-      "description": "Subagent-delegation test: routes every punch request to a Haiku punch-researcher subagent so verbose corpus output stays out of the main context and costs drop. No bundled MCP/token; needs a managed eplus-punch-engine server.",
+      "description": "Subagent-delegation test: routes every punch request to a Sonnet 5 punch-researcher subagent so verbose corpus output stays out of the main context. No bundled MCP/token; needs a managed punch-query server.",
       "author": {
         "name": "Victor Ortega",
         "email": "victor.ortega@eplusadvisors.com"
       },
-      "version": "0.3.0",
+      "version": "0.4.0",
       "source": "./plugins/punch-subagent",
       "category": "development",
       "tags": ["internal", "test", "subagent", "punch"],
       "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/punch-subagent",
+      "defaultEnabled": false
+    },
+    {
+      "name": "model-routing",
+      "displayName": "Model Routing & Context Management",
+      "description": "Routes work to the right-sized model on a paid 3P deployment: Fable/Sonnet/Opus worker subagents plus a skill that decides by task difficulty AND stakes (an engineering firm's client-facing output gets an Opus review even when it looks simple). No hooks yet.",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "version": "0.1.0",
+      "source": "./plugins/model-routing",
+      "category": "development",
+      "tags": ["internal", "routing", "cost", "context", "subagents"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/main/plugins/model-routing",
       "defaultEnabled": false
     }
   ]

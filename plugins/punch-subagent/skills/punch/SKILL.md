@@ -8,8 +8,8 @@ argument-hint: <what to look up — e.g. "recurring telecom issues at NVA05A" or
 
 **Do not query the punch database yourself.** For any punch-related request,
 delegate the whole thing to the **`punch-researcher`** subagent (this plugin's
-agent). It researches the EPLUS punch corpus in its own isolated context on a
-cheaper model (Haiku) and returns only a concise summary.
+agent). It researches the EPLUS punch corpus in its own isolated context (on
+Sonnet 5) and returns only a concise summary.
 
 ## Why delegate
 
@@ -20,7 +20,7 @@ whatever (more expensive) model this session uses. Delegating:
 
 - **Preserves context** — the raw corpus output stays in the subagent; only the
   summary comes back here.
-- **Cuts cost** — the research runs on Haiku, not the main model.
+- **Cuts main-model load** — the verbose research runs in the subagent, not your main thread; it uses Sonnet 5 for reliable recall on complete-citation searches.
 
 ## How to delegate
 

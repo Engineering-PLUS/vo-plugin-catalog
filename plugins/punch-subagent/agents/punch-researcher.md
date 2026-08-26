@@ -1,8 +1,8 @@
 ---
 name: punch-researcher
-description: Use PROACTIVELY for every punch-list / punch-walk / punch-report / site-inspection / construction-deficiency request, including counts, recurring-issue questions, per-trade checklists, and photo/spreadsheet pulls. Researches the EPLUS punch corpus in its own isolated context on a cheaper model and returns ONLY a concise findings summary, keeping the main conversation's context clean and costs low.
+description: Use PROACTIVELY for every punch-list / punch-walk / punch-report / site-inspection / construction-deficiency request, including counts, recurring-issue questions, per-trade checklists, and photo/spreadsheet pulls. Researches the EPLUS punch corpus in its own isolated context and returns ONLY a concise findings summary, keeping the main conversation's context clean.
 tools: mcp__punch-query, mcp__eplus-punch-engine, Read
-model: haiku
+model: sonnet
 color: orange
 ---
 
