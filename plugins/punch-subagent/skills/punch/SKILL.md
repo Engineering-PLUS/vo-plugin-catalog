@@ -29,9 +29,15 @@ tool (or name it in natural language / @-mention it). Pass the user's intent
 verbatim plus any project / trade / status / sheet the user named — the
 subagent owns the filter vocabulary and tool routing, so you don't need to.
 
-When it returns, relay its summary to the user. If the user asks a follow-up on
-the same thread of research, resume the same subagent rather than starting a new
-one, so it keeps its context.
+The researcher runs on a **hard budget of 3–4 tool calls per session**, so scope
+each delegation to one answerable question. When it returns, relay its summary
+to the user. If it reports the budget cut the research short (it will propose
+the follow-up query), **you decide** whether the partial answer suffices or
+whether to launch another researcher session with that tighter, better-tailored
+direction — one delegation per remaining question, each with its own budget.
+
+If the user asks a follow-up on the same thread of research, resume the same
+subagent rather than starting a new one, so it keeps its context.
 
 ## What NOT to do
 
