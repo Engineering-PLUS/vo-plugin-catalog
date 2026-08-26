@@ -1,11 +1,11 @@
 {
-  "description": "Tool-name probe for the managed-MCP experiment. A PreToolUse hook emits a systemMessage (renders as a visible hook code block) with the EXACT tool name whenever report_issue is invoked, so the managed-server form (mcp__<server>__report_issue) can be compared against the plugin-bundled form (mcp__plugin_<plugin>_<server>__report_issue). Single `python` command -- no shell polyglot, so no foreign-shell 'command not found' noise. Emits ONLY systemMessage (no additionalContext): an instruction-shaped additionalContext on a PreToolUse gets the tool BLOCKED by the auto-mode classifier. This plugin bundles NO MCP server -- error-reporting is supplied via bootstrap managedMcpServers.",
+  "description": "Tool-name probe for the managed-MCP experiment. A PreToolUse hook emits a systemMessage (renders as a visible hook block) with the EXACT tool name whenever report_issue is invoked, to compare the managed-server form (mcp__<server>__report_issue) against the plugin-bundled form. PURE POWERSHELL host command -- no python, no sh: Cowork Chat runs hooks on the Windows host, which has PowerShell but not python. systemMessage only (no additionalContext, which is injection-shaped and classifier-blockable). This plugin bundles NO MCP server -- error-reporting is supplied via bootstrap managedMcpServers.",
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/tool-name-probe.py\"" }
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/tool-name-probe.ps1\"" }
         ]
       }
     ]

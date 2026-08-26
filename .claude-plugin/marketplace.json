@@ -104,7 +104,7 @@
         "name": "Victor Ortega",
         "email": "victor.ortega@eplusadvisors.com"
       },
-      "version": "0.2.0",
+      "version": "0.3.0",
       "source": "./plugins/error-reporting-managed",
       "category": "development",
       "tags": ["internal", "test", "mcp", "secrets"],
@@ -119,7 +119,7 @@
         "name": "Victor Ortega",
         "email": "victor.ortega@eplusadvisors.com"
       },
-      "version": "0.2.0",
+      "version": "0.3.0",
       "source": "./plugins/punch-subagent",
       "category": "development",
       "tags": ["internal", "test", "subagent", "punch"],
