@@ -1,0 +1,20 @@
+{
+  "master_file": "master_report_items.json",
+  "ep_project_no": "<EP project number, INTERNAL TRACKING ONLY, never rendered>",
+  "output_filename": "<PROJECT>-Punch-Report-DRAFT-v0.1.docx",
+  "cover_eyebrow": "Technology Site Inspection",
+  "cover_title": "<Client project name, e.g. STACK Project Miner>",
+  "cover_subtitle": "<Building / area, e.g. Building A>",
+  "site_address": [
+    "<street address,>",
+    "<city, state>"
+  ],
+  "walk_date": "Site walk: <Month D, YYYY>",
+  "issuance_date": "<ASK the reviewer with AskUserQuestion, never infer>",
+  "inspector": "<Name of the engineer who walked the site>",
+  "site_location": "<Project>, <Building / area>",
+  "prepared_by": "Field observations by: <Name>, Engineering PLUS (EPLUS Advisors)",
+  "compiled_line": "Draft compiled: <Month D, YYYY>  •  Revision 0.1",
+  "draft_warning": "Not for issuance to Owner, GC, or Subcontractors until reviewed and edited by <reviewer>",
+  "footer_text": "Engineering PLUS  •  <Project> <Building> Draft Punch Report"
+}

@@ -1,6 +1,22 @@
 {
-  "description": "FIELD-PROVEN 2026-08-26: SubagentStart/SubagentStop/PostToolUse:Agent all dispatch in Cowork with agent_type exactly 'punch-subagent:punch-researcher', and the [[punch-hooks]] displayContent banner renders in the chat UI (prepended to the next assistant reply -- that placement is inherent to MessageDisplay). systemMessage leaves NO trace on this surface (not rendered, not transcribed) and is no longer used anywhere here. Layout: hook-probe.ps1 on the three probe events logs each dispatch to $CLAUDE_PLUGIN_DATA/hook-probe.log (machine-local) AND to <session project dir>/<session_id>/hook-probe.log -- the dir the session exporter zips, so the hook trail appears in every export and Log Lens renders it as a log file -- and queues a banner tracer; the MessageDisplay entry drains the queue into the banner (display-only: model and transcript never see it). show-subagent-final.ps1 (scoped matcher, now proven correct) banners a 220-char excerpt of the subagent's final message and writes the full text to <session dir>/subagent-final-messages.log. PURE POWERSHELL host commands -- no python, no sh: Cowork runs hooks on the Windows host. Disable echo with EPLUS_NO_SUBAGENT_ECHO=1.",
+  "description": "Two hook families. (A) WORKFLOW ENFORCEMENT, imported from eplus-punch-reports v0.4.0: polyglot shell-form wirings (.ps1 half runs on Windows hosts where Cowork executes hooks, .sh half on POSIX, each no-ops on the other's platform, trailing exit 0 valid in every shell) -- orient-punch-session on SessionStart, block-punch-pdf denying LibreOffice PDF conversion of punch reports on PreToolUse:Bash, check-draft-voice on PostToolUse:Write|Edit, verify-after-render on PostToolUse:Bash. Each has its own EPLUS_NO_* escape hatch. PostToolUseFailure stays unwired: error-reporting owns that event. (B) SUBAGENT DIAGNOSTICS + ECHO, field-proven 2026-08-26: SubagentStart/SubagentStop/PostToolUse:Agent all dispatch in Cowork with agent_type 'punch-subagent:punch-researcher', and the [[punch-hooks]] displayContent banner renders in the chat UI while systemMessage leaves no trace (not used anywhere here). hook-probe.ps1 logs each dispatch to $CLAUDE_PLUGIN_DATA/hook-probe.log and to <session project dir>/<session_id>/hook-probe.log (the dir the session exporter zips, so Log Lens shows the trail) and queues a banner tracer; the MessageDisplay entry drains the queue into the banner (display-only: model and transcript never see it). show-subagent-final.ps1 (scoped matcher) banners a 220-char excerpt of the subagent's final message and writes the full text to <session dir>/subagent-final-messages.log. Probe scripts are Windows-host PowerShell (no python, no sh). Disable echo with EPLUS_NO_SUBAGENT_ECHO=1.",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/orient-punch-session.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/orient-punch-session.sh\"; exit 0" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/block-punch-pdf.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/block-punch-pdf.sh\"; exit 0" }
+        ]
+      }
+    ],
     "SubagentStart": [
       {
         "matcher": "*",
@@ -24,6 +40,18 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/check-draft-voice.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/check-draft-voice.sh\"; exit 0" }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/verify-after-render.ps1\"; sh \"${CLAUDE_PLUGIN_ROOT}/scripts/verify-after-render.sh\"; exit 0" }
+        ]
+      },
       {
         "matcher": "Agent",
         "hooks": [

@@ -1,0 +1,12 @@
+{
+  "name": "eplus-punch-report-generator",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Renders an EPLUS punch report docx: one item per page, dynamically sized photo grid, sheet clips, EPLUS branding.",
+  "scripts": {
+    "report": "node gen_report.js"
+  },
+  "dependencies": {
+    "docx": "^9.7.1"
+  }
+}

@@ -113,13 +113,13 @@
     },
     {
       "name": "punch-subagent",
-      "displayName": "Punch Subagent (delegation test)",
-      "description": "Subagent-delegation test: routes every punch request to a Sonnet 5 punch-researcher subagent so verbose corpus output stays out of the main context. No bundled MCP/token; needs a managed punch-query server.",
+      "displayName": "EPLUS Punch (subagent edition)",
+      "description": "Full punch plugin (docx report pipeline + corpus research, completed from eplus-punch-reports v0.4.0) with the vo modifications under test: corpus lookups delegated to a budgeted Sonnet 5 punch-researcher subagent, and UI-visible hook diagnostics. No bundled MCP/token; needs a managed punch-query server.",
       "author": {
         "name": "Victor Ortega",
         "email": "victor.ortega@eplusadvisors.com"
       },
-      "version": "0.6.0",
+      "version": "0.7.0",
       "source": "./plugins/punch-subagent",
       "category": "development",
       "tags": ["internal", "test", "subagent", "punch"],
