@@ -11,11 +11,17 @@
 #   displayContent is display-only: the transcript and what Claude sees keep
 #   the original text. NO systemMessage, NO additionalContext from this script.
 #
-# Every dispatch also appends to $CLAUDE_PLUGIN_DATA/hook-probe.log (pure
-# forensics, invisible everywhere). PowerShell 5.1-compatible. Never blocks;
-# always exit 0. Cowork/SDK note: MessageDisplay arrives once per message with
-# index=0 and the full text in delta, so draining at index 0 covers both
-# streaming and non-interactive modes.
+# Every dispatch also appends to TWO forensic logs (invisible everywhere):
+#   1. $CLAUDE_PLUGIN_DATA/hook-probe.log -- machine-local, survives sessions.
+#   2. <session project dir>/<session_id>/hook-probe.log, derived from the
+#      hook input's transcript_path. This dir is the one the session exporter
+#      zips (it already carries subagents/ and tool-results/), so the hook
+#      trail rides along in every session-export zip and Log Lens displays it
+#      as a log file automatically.
+# PowerShell 5.1-compatible. Never blocks; always exit 0. Cowork/SDK note:
+# MessageDisplay arrives once per message with index=0 and the full text in
+# delta, so draining at index 0 covers both streaming and non-interactive
+# modes.
 
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -36,6 +42,18 @@ try {
         if ($data.PSObject.Properties['last_assistant_message'] -and ($data.last_assistant_message -is [string])) {
             $lastLen = $data.last_assistant_message.Length
         }
+    }
+
+    # Session project dir (exported with the session): <dir of transcript_path>\<session_id>
+    $exportDir = $null
+    if ($null -ne $data -and $data.PSObject.Properties['transcript_path'] -and $data.transcript_path) {
+        try {
+            $tdir = Split-Path -Path ([string]$data.transcript_path) -Parent
+            if ($tdir) {
+                $exportDir = Join-Path $tdir $session
+                if (-not (Test-Path -LiteralPath $exportDir)) { New-Item -ItemType Directory -Path $exportDir -Force | Out-Null }
+            }
+        } catch { $exportDir = $null }
     }
 
     $dataRoot = $env:CLAUDE_PLUGIN_DATA
@@ -79,12 +97,15 @@ try {
         if ($tool) { $tracer += " tool=$tool" }
         if ($lastLen -ge 0) { $tracer += " final_msg_chars=$lastLen" }
 
+        $logLine = "{0:yyyy-MM-ddTHH:mm:ssZ} session={1} event={2} agent_type={3} tool_name={4} last_assistant_message_len={5}" -f [DateTime]::UtcNow, $session, $evt, $agent, $tool, $lastLen
         if ($sessionDir) {
-            $logLine = "{0:yyyy-MM-ddTHH:mm:ssZ} session={1} event={2} agent_type={3} tool_name={4} last_assistant_message_len={5}" -f [DateTime]::UtcNow, $session, $evt, $agent, $tool, $lastLen
             try { Add-Content -Path (Join-Path $dataRoot 'hook-probe.log') -Value $logLine -Encoding utf8 } catch { }
             if ($queuePath) {
                 try { Add-Content -Path $queuePath -Value $tracer -Encoding utf8 } catch { }
             }
+        }
+        if ($exportDir) {
+            try { Add-Content -Path (Join-Path $exportDir 'hook-probe.log') -Value $logLine -Encoding utf8 } catch { }
         }
         # No stdout: the banner is the one visibility channel under test.
     }
