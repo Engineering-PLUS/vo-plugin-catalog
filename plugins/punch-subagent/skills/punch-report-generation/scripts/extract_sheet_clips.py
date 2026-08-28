@@ -39,6 +39,7 @@ Usage:
         --items-from data/items.json --dims-out build/sheet_clip_dims_jpg.json
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -119,6 +120,8 @@ def main():
 
     os.makedirs(args.out_dir, exist_ok=True)
     dims, fallback, missing = {}, [], []
+    seen_hashes = {}  # sha1 of clip bytes -> first pin that produced it
+    duplicates = []
 
     for n in targets:
         pno, hrect = find_heading(doc, n, start)
@@ -144,8 +147,18 @@ def main():
         clip = pymupdf.Rect(box.x0 + 0.8, box.y0 + 0.8, box.x1 - 0.8, box.y1 - 0.8) & page.rect
         pix = page.get_pixmap(clip=clip, matrix=pymupdf.Matrix(args.zoom, args.zoom))
         name = f"item_{n}.jpg"
-        pix.pil_save(os.path.join(args.out_dir, name), format="JPEG",
+        out_path = os.path.join(args.out_dir, name)
+        pix.pil_save(out_path, format="JPEG",
                      quality=args.quality, optimize=True)
+        # Two pins must never share a clip. It happened in circulation once: two
+        # items carried byte-identical clips and one was therefore showing the
+        # wrong drawing (Segment A1 for a pin on Segment A2). Byte-hash every
+        # emitted clip and flag collisions loudly (CHANGE-LIST 7).
+        h = hashlib.sha1(open(out_path, "rb").read()).hexdigest()
+        if h in seen_hashes:
+            duplicates.append((seen_hashes[h], n))
+        else:
+            seen_hashes[h] = n
         dims[name] = [pix.width, pix.height]
         if used_fb:
             fallback.append(n)
@@ -156,9 +169,16 @@ def main():
     print(f"extracted {len(dims)}/{len(targets)} sheet clips -> {args.out_dir}")
     print(f"  used overflow fallback : {fallback or 'none'}")
     print(f"  missing                : {missing or 'none'}")
+    print(f"  duplicate clips        : {duplicates or 'none'}")
     print(f"  wrote {args.dims_out}")
     if missing:
         print("  CHECK the missing items by hand before rendering.")
+    if duplicates:
+        pairs = ", ".join(f"pins {a} and {b}" for a, b in duplicates)
+        sys.exit(f"ERROR: byte-identical clips for {pairs}. One of each pair is "
+                 f"showing the wrong drawing. A wrong drawing has shipped this "
+                 f"way before; fix the Task Report or the heading match before "
+                 f"rendering.")
 
 
 if __name__ == "__main__":

@@ -103,8 +103,41 @@ def main():
     args = ap.parse_args()
 
     items = json.load(open(args.items))
-    drafted = {d["number"]: d for d in json.load(open(args.drafted))}
+
+    # drafted_items.json is either the historical bare list, or an object
+    # {"items": [...], "merges": [...]} so reviewer pin-merge decisions live in
+    # the judgment layer instead of as a mutation of items.json (CHANGE-LIST 6).
+    drafted_doc = json.load(open(args.drafted))
+    if isinstance(drafted_doc, dict):
+        drafted_list = drafted_doc["items"]
+        merges = drafted_doc.get("merges", [])
+    else:
+        drafted_list = drafted_doc
+        merges = []
+    drafted = {d["number"]: d for d in drafted_list}
     omit = {int(x) for x in args.omit.split(",") if x.strip()}
+
+    # Apply merges in memory (same semantics as scripts/merge_pins.py: fold the
+    # absorbed pin's photos in, dedupe by uid, keep chronological order, drop
+    # named photos) and auto-omit the absorbed pin.
+    by_num = {i["number"]: i for i in items}
+    for mg in merges:
+        into, src_n = mg["into"], mg["from"]
+        if into not in by_num or src_n not in by_num:
+            sys.exit(f"ERROR: merge {src_n} -> {into} names a pin not in {args.items}.")
+        dst, src = by_num[into], by_num[src_n]
+        have = {p["uid"] for p in dst["photos"]}
+        drops = mg.get("drop_photos", [])
+        for p in src["photos"]:
+            title = p.get("title") or ""
+            if any(d in title for d in drops):
+                continue
+            if p["uid"] in have:
+                continue
+            dst["photos"].append(p)
+        dst["photos"].sort(key=lambda p: p.get("captured") or "")
+        dst["merged_from"] = sorted(set(dst.get("merged_from", []) + [src_n]))
+        omit.add(src_n)
 
     missing = [i["number"] for i in items if i["number"] not in drafted and i["number"] not in omit]
     if missing:
@@ -120,6 +153,19 @@ def main():
         display_n += 1
 
         ca = d.get("corrective_action") or UNDETERMINED_CA
+        # Text that a human approved is never altered by the pipeline. It must
+        # arrive already clean; anything sanitize would change is an error, not
+        # a silent rewrite (handoff guard rail, CHANGE-LIST 5).
+        protected = d.get("origin") in ("reviewer_final", "user_reviewed")
+        if protected:
+            ca = d.get("corrective_action") or UNDETERMINED_CA
+            for field in ("title", "description", "corrective_action"):
+                val = d.get(field)
+                if val and sanitize(val) != val:
+                    sys.exit(f"ERROR: pin {num} has origin {d['origin']!r} but its "
+                             f"{field} is not sanitize-clean. Fix the source text "
+                             f"explicitly instead of letting the pipeline rewrite "
+                             f"approved wording. Offending value: {val!r}")
         sheet_name = normalize_sheet(it.get("sheet_name") or "")
         sheet_desc = it.get("sheet_description") or ""
         sheet_display = f"{sheet_name}, {sheet_desc}" if sheet_desc else (sheet_name or "N/A")
@@ -131,7 +177,7 @@ def main():
             "plangrid_ref": f"#{num}",
             "title": d["title"],
             "description": d["description"],
-            "corrective_action": capitalize_first(ca),
+            "corrective_action": ca if protected else capitalize_first(ca),
             # PlanGrid room is empty on 100% of pins in this pull. Say so rather
             # than printing a bare "N/A" the reader has to interpret.
             "location": room or "Not recorded in PlanGrid, see sheet reference",
@@ -143,6 +189,11 @@ def main():
             "photo_titles": [p["title"] for p in it["photos"]],
             "origin": d.get("origin"),
             "confidence": d.get("confidence"),
+            # For items without photos: "own_photos" renders the blank paste
+            # grid, "none" suppresses the grid and the Photos label entirely,
+            # "followup" renders the blank grid (an editor_note should say a
+            # revisit is planned). Absent means own_photos.
+            "photo_mode": d.get("photo_mode"),
             # renderer expects this key name for the engineer's verbatim wording
             "jim_original_text": d.get("field_note"),
             "precedent_note": d.get("precedent_note"),
@@ -159,9 +210,12 @@ def main():
     if bad:
         sys.exit(f"ERROR: {len(bad)} em/en dashes survived sanitization.")
 
-    # voice guard, descriptions only
+    # voice guard, descriptions only. Human-approved text is exempt: the
+    # reviewer outranks the style rule.
     offenders = []
     for m in master:
+        if m.get("origin") in ("reviewer_final", "user_reviewed"):
+            continue
         for pat in VOICE_BANNED:
             hit = re.search(pat, m["description"], re.I)
             if hit:

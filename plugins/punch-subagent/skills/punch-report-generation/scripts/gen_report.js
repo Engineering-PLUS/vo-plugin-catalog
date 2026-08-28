@@ -32,7 +32,7 @@ const {
   Header, Footer, PageNumber, VerticalAlign, LevelFormat, HeadingLevel,
   TabStopType, LeaderType, Tab, Bookmark, InternalHyperlink, PageReference,
   HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType,
-  TableAnchorType, OverlapType,
+  TableAnchorType, OverlapType, ImportedXmlComponent,
 } = require('docx');
 
 const BUILD = process.argv[2] || path.join(__dirname, '..');
@@ -266,7 +266,24 @@ function emptyCell() {
     margins: { top: 40, bottom: 40, left: 40, right: 40 },
     borders: thinBorders(),
     verticalAlign: VerticalAlign.CENTER,
-    children: [new Paragraph({ text: '' })],
+    // An empty cell holding an empty paragraph collapses to a single text line,
+    // so the slot is invisible as a paste target. Give it the height of a
+    // filled cell.
+    children: [new Paragraph({
+      spacing: { before: Math.round(PHOTO_H_DXA / 2), after: Math.round(PHOTO_H_DXA / 2) },
+      children: [run('')],
+    })],
+  });
+}
+
+function emptyPhotoRow() {
+  return new Table({
+    width: { size: USABLE_W, type: WidthType.DXA },
+    columnWidths: Array(PHOTO_COLS).fill(PHOTO_COL_W),
+    rows: [new TableRow({
+      cantSplit: true,
+      children: Array.from({ length: PHOTO_COLS }, emptyCell),
+    })],
   });
 }
 
@@ -302,6 +319,9 @@ function estimateOverheadDXA(item) {
 
   h += 300 + estimateTextHeightDXA(item.description, 20, USABLE_W) + 80;
   h += 300 + estimateTextHeightDXA(item.corrective_action, 20, USABLE_W) + 80;
+  // An item with no photos now renders one empty grid row, so reserve it --
+  // unless photo_mode "none" says no photos apply to this item at all.
+  if (!item.photo_paths.length && item.photo_mode !== 'none') h += PHOTO_ROW_H;
   // no allowance for jim_original_text: that block is no longer rendered (see itemSection)
   if (item.editor_note || item.precedent_note) {
     if (item.editor_note) h += estimateTextHeightDXA(item.editor_note, NOTE_SIZE, USABLE_W - 400) + 60;
@@ -431,16 +451,29 @@ function itemSection(item) {
     : n <= PHOTO_COLS ? n
     : Math.max(0, Math.min(n, capacityFirst));
 
-  children.push(new Paragraph({
-    spacing: { after: 60 },
-    children: [run(
-      firstCount >= n ? `Photos (${n})`
-        : firstCount === 0 ? `Photos (${n}), see following page`
-        : `Photos (1 to ${firstCount} of ${n})`,
-      { bold: true, size: 20, color: BLUE })],
-  }));
+  // photo_mode "none" (set during the wording review) means no photos apply to
+  // this item: no label, no grid, nothing to paste into. Any other value on a
+  // photo-less item renders the blank paste-target grid below.
+  const suppressPhotos = n === 0 && item.photo_mode === 'none';
 
-  if (firstCount > 0) children.push(photoTable(item, 0, firstCount));
+  if (!suppressPhotos) {
+    children.push(new Paragraph({
+      spacing: { after: 60 },
+      // No count in the label. The count goes stale the moment anyone adds or
+      // removes a photo in Word, nothing downstream reads it, and the photos are
+      // visible immediately below. Standing rule, not a per-report tweak.
+      children: [run(
+        firstCount >= n ? 'Photos'
+          : firstCount === 0 ? 'Photos, see following page'
+          : 'Photos',
+        { bold: true, size: 20, color: BLUE })],
+    }));
+
+    // An item with no photos still gets one empty row. Pins logged without a
+    // photo are the ones most likely to have one added by hand later, so the slot
+    // has to be there to paste into.
+    children.push(n === 0 ? emptyPhotoRow() : photoTable(item, 0, firstCount));
+  }
 
   let idx = firstCount;
   while (idx < n) {
@@ -458,7 +491,7 @@ function itemSection(item) {
       keepNext: true,
       spacing: { after: 80 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: LIGHTGREY, space: 2 } },
-      children: [run(`Photos ${idx + 1} to ${end} of ${n}`, { size: 17, color: DARKGREY })],
+      children: [run('Photos (continued)', { size: 17, color: DARKGREY })],
     }));
     children.push(photoTable(item, idx, end));
     idx = end;
@@ -497,6 +530,7 @@ const totalPhotos = master.reduce((s, m) => s + m.photo_paths.length, 0);
 // simply renders without it.
 const EMU_PER_IN = 914400;
 const inEMU = (n) => Math.round(n * EMU_PER_IN);
+const INCLUDE_COVER = CFG.include_cover !== false;
 const COVER_DIR = path.join(BUILD, 'assets/cover');
 // 0.25in from the paper edge, the same inset as the body pages' letterhead
 // (HEADER_MARGIN), so the cover logos and the interior letterhead line up.
@@ -731,11 +765,14 @@ const cover = [
   }),
 ];
 
-// TOC entries are static TITLES with LIVE PAGEREF page-number fields (see tocEntry).
-// A full Word TableOfContents field would also regenerate the titles, but it renders as
-// an empty page until fields are updated, which looks broken on open. This hybrid always
-// shows the item list, lets Victor edit any entry's text directly, and still gets real
-// page numbers from Word.
+// The contents block is a REAL Word TOC field whose CACHED RESULT is the styled
+// entry list below (the exact structure Word itself saves). On open the cached
+// entries show immediately -- nothing looks broken -- and Update Table / Ctrl+A F9
+// regenerates titles, page numbers AND entry count together, which is what the
+// hand-built hybrid could never do: deleting an item used to renumber the body
+// while the TOC silently rotted (field evidence 2026-08-28, two reports same day).
+// Regenerated entries take the TOC1 paragraph style defined on the Document, so
+// the look survives regeneration.
 function bookmarkFor(item) {
   return `punchitem${item.display_number}`;
 }
@@ -774,7 +811,16 @@ function tocEntry(item) {
   });
 }
 
+const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+const fldChar = (type) => ImportedXmlComponent.fromXmlString(`<w:r ${W_NS}><w:fldChar w:fldCharType="${type}"/></w:r>`);
+// Canonical instruction form: leading/trailing space, \h for hyperlinked entries,
+// \z (no leader in web view), \u (outline levels). \o "1-1" collects Heading 1,
+// which is what every item heading uses.
+const tocInstr = () => ImportedXmlComponent.fromXmlString(`<w:r ${W_NS}><w:instrText xml:space="preserve"> TOC \\o "1-1" \\h \\z \\u </w:instrText></w:r>`);
+
+cover.push(new Paragraph({ spacing: { after: 0 }, children: [fldChar('begin'), tocInstr(), fldChar('separate')] }));
 for (const item of master) cover.push(tocEntry(item));
+cover.push(new Paragraph({ spacing: { after: 0 }, children: [fldChar('end')] }));
 
 // ------------------------------------------------------------------------------ assemble
 const children = [...cover];
@@ -867,6 +913,15 @@ const doc = new Document({
       id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
       run: { bold: true, size: 26, color: BLUE, font: FONT },
       paragraph: { spacing: { before: 0, after: 120 } },
+    }, {
+      // Style Word applies to entries it regenerates inside the TOC field. Matches
+      // tocEntry(): dot-leader right tab at the text edge, same size and colour.
+      id: 'TOC1', name: 'TOC 1', basedOn: 'Normal', next: 'Normal',
+      run: { size: 19, color: DARKGREY, font: FONT },
+      paragraph: {
+        spacing: { after: 40 },
+        tabStops: [{ type: TabStopType.RIGHT, position: USABLE_W, leader: LeaderType.DOT }],
+      },
     }],
   },
   numbering: {
@@ -889,7 +944,13 @@ const doc = new Document({
     // the cover carries its own branding and a "Page 1 of N" strip across the artwork
     // reads as a mistake. Its top margin is small so the logo row sits in the white
     // band above the photo.
-    {
+    //
+    // Set "include_cover": false in report.config.json to omit it. Some clients
+    // issue their own coversheet and combine PDFs by hand, in which case a
+    // generated cover is a page they delete every time. Dropping the section is
+    // safe: the Table of Contents paragraph carries no pageBreakBefore, so it
+    // simply becomes page 1.
+    ...(INCLUDE_COVER ? [{
       properties: {
         page: {
           size: { width: PAGE_W, height: PAGE_H },
@@ -901,7 +962,7 @@ const doc = new Document({
         },
       },
       children: coverPage,
-    },
+    }] : []),
     {
       properties: {
         page: {

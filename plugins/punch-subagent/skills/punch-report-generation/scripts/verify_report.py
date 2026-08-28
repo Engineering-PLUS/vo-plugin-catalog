@@ -94,10 +94,47 @@ def main():
     checks.append(("every PAGEREF resolves to a bookmark",
                    not (set(pagerefs) - bookmarks),
                    f"dangling: {sorted(set(pagerefs) - bookmarks)}"))
+    # Names being right is NOT enough. The docx library writes every bookmark
+    # with w:id="1", and Word keys bookmarks on the numeric id, not the name:
+    # duplicate ids mean it keeps one and discards the rest, so every TOC entry
+    # after the first renders "Error! Bookmark not defined." on F9. That shipped
+    # once. fix_bookmark_ids.py renumbers them; this asserts it ran.
+    bm_ids = re.findall(r'<w:bookmarkStart[^>]*w:id="(\d+)"', doc)
+    dup_ids = sorted({i for i in bm_ids if bm_ids.count(i) > 1})
+    checks.append(("bookmark ids are unique", not dup_ids,
+                   f"duplicated w:id {dup_ids}, run scripts/fix_bookmark_ids.py"))
+
     checks.append(("no stale hardcoded page numbers",
                    not re.findall(r">p\. \d+<", doc), "found baked 'p. N' text"))
     checks.append(("Word set to refresh fields on open",
                    "<w:updateFields" in settings, "w:updateFields missing"))
+
+    # The contents block must be a REAL TOC field (begin / instr / separate /
+    # cached entries / end), not free-standing paragraphs: only a field makes
+    # Word's Update Table repair titles, numbers AND entry count together.
+    # Checked in the form Word actually consumes, not by trusting the renderer.
+    toc_instrs = re.findall(r"<w:instrText[^>]*>([^<]*TOC[^<]*)</w:instrText>", doc)
+    checks.append(("a TOC field instruction is present", len(toc_instrs) == 1,
+                   f"found {len(toc_instrs)} TOC instrText nodes, expected 1"))
+    if toc_instrs:
+        canonical = re.match(r"^ TOC \\o &quot;1-1&quot; \\h \\z \\u $", toc_instrs[0]) \
+            or re.match(r'^ TOC \\o "1-1" \\h \\z \\u $', toc_instrs[0])
+        checks.append(("TOC instruction is canonical", bool(canonical),
+                       f"got {toc_instrs[0]!r}"))
+        # The field must open before the first cached entry and close after the
+        # last: an unterminated field swallows the rest of the document on F9.
+        toc_pos = doc.find(toc_instrs[0])
+        seg = doc[:toc_pos]
+        begins = seg.count('w:fldCharType="begin"')
+        after = doc[toc_pos:]
+        checks.append(("TOC field opens and closes",
+                       begins >= 1 and 'w:fldCharType="separate"' in after
+                       and 'w:fldCharType="end"' in after,
+                       "field chars incomplete around TOC instruction"))
+    checks.append((f"TOC cached entries match item count ({n_items})",
+                   len(pagerefs) == n_items,
+                   f"{len(pagerefs)} entries against {n_items} items -- the TOC has rotted; "
+                   "re-render or run scripts/fix_toc.py"))
 
     # layout
     checks.append(("one page break per item",

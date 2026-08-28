@@ -50,9 +50,28 @@ def parse_only(spec):
     return keep
 
 
-def find_delta(root):
-    hits = sorted(glob.glob(os.path.join(root, "delta_*_to_*")))
-    return hits[-1] if hits else None
+def find_deltas(root):
+    """
+    Every delta folder, oldest first.
+
+    A pull can carry MORE THAN ONE delta. Miner Building A had
+    delta_2026-08-14_to_2026-08-24 (30 tasks) and
+    delta_2026-08-25_to_2026-08-26 (8 tasks). The later one is NOT a superset:
+    it holds only that window's tasks. Taking the newest delta alone dropped
+    items 12-30 and every photo belonging to them, with no error.
+
+    Sort by the window start date parsed out of the folder name rather than
+    lexically, so the merge order is chronological whatever the naming.
+    """
+    hits = glob.glob(os.path.join(root, "delta_*_to_*"))
+    hits = [h for h in hits if os.path.isdir(h)]
+
+    def key(path):
+        m = re.search(r"delta_(\d{4}-\d{2}-\d{2})_to_(\d{4}-\d{2}-\d{2})",
+                      os.path.basename(path))
+        return (m.group(1), m.group(2)) if m else ("", os.path.basename(path))
+
+    return sorted(hits, key=key)
 
 
 def index_photo_files(dirs):
@@ -87,34 +106,36 @@ def main():
     args = ap.parse_args()
 
     root = os.path.abspath(args.project_root)
-    delta = find_delta(root)
+    deltas = find_deltas(root)
     keep = parse_only(args.only)
 
-    # tasks: prefer the delta (superset, newer), fall back to base
-    tasks = None
-    tasks_src = None
-    if delta:
-        tasks = load_json(os.path.join(delta, "tasks.json"))
-        tasks_src = delta
-    if not tasks:
-        tasks = load_json(os.path.join(root, "tasks.json"), [])
-        tasks_src = root
+    # Layers, oldest first: the base pull, then every delta in date order.
+    # Later layers overwrite earlier ones on collision, so the newest state of
+    # a task wins, but nothing that appears only in an older layer is lost.
+    layers = [root] + deltas
 
-    # sheets: base is authoritative, delta's is typically empty
-    sheets = load_json(os.path.join(root, "sheets.json"), [])
-    if delta:
-        sheets = (load_json(os.path.join(delta, "sheets.json"), []) or []) + sheets
+    # tasks: merged by uid across every layer, keyed so a task revised in a
+    # later delta replaces its earlier version rather than duplicating it.
+    by_uid = {}
+    for layer in layers:
+        for t in load_json(os.path.join(layer, "tasks.json"), []) or []:
+            by_uid[t["uid"]] = t
+    tasks = list(by_uid.values())
+    tasks_src = " + ".join(os.path.basename(l) or "." for l in layers)
+
+    # sheets: the base is authoritative, a delta's sheets.json is usually empty
+    sheets = []
+    for layer in layers:
+        sheets += load_json(os.path.join(layer, "sheets.json"), []) or []
     sheet_by_uid = {s["uid"]: s for s in sheets}
 
-    # photo binaries live in both folders
-    photo_dirs = [os.path.join(root, "photos")]
-    if delta:
-        photo_dirs.append(os.path.join(delta, "photos"))
+    # photo binaries: each layer ships only its own new files
+    photo_dirs = [os.path.join(l, "photos") for l in layers]
     photo_files = index_photo_files([d for d in photo_dirs if os.path.isdir(d)])
 
-    # task_details, merged, delta wins on collision
+    # task_details, merged, later layers win on collision
     details = {}
-    for base_dir in [root] + ([delta] if delta else []):
+    for base_dir in layers:
         for f in glob.glob(os.path.join(base_dir, "task_details", "*.json")):
             d = load_json(f)
             if d:
@@ -184,7 +205,7 @@ def main():
     with_room = [i for i in items if (i["room"] or "").strip()]
     no_sheet = [i["number"] for i in items if not i["sheet_name"]]
 
-    print(f"tasks source     : {os.path.basename(tasks_src)}")
+    print(f"tasks source     : {tasks_src}")
     print(f"filler title     : {filler!r}" if filler else "filler title     : none detected")
     print(f"items            : {len(items)}")
     print(f"  described      : {len(described)} -> {[i['number'] for i in described]}")

@@ -99,6 +99,10 @@ echo "==> 4/5 build master"
 echo "==> 5/5 render"
 node scripts/gen_report.js "$BUILD"
 
+# The docx library emits every bookmark with the same numeric id, which makes
+# Word show "Error! Bookmark not defined." for all but the first TOC entry.
+"$PY" scripts/fix_bookmark_ids.py "$BUILD/$("$PY" -c "import json;print(json.load(open('$BUILD/report.config.json'))['output_filename'])")"
+
 echo "==> verify"
 OUT=$("$PY" -c "import json;print(json.load(open('$BUILD/report.config.json'))['output_filename'])")
 "$PY" scripts/verify_report.py "$BUILD/$OUT" "$BUILD/master_report_items.json"

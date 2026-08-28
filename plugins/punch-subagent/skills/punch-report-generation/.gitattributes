@@ -1,0 +1,11 @@
+# The pipeline scripts were historically stored CRLF; any tool that reads and
+# rewrites one in text mode converted the whole file to LF and produced diffs
+# where every line changed (gen_report.js: 1891 diff lines for 9 real edits —
+# see the 2026-08-28 handoff, patches/APPLYING.md). Pin the working formats so
+# this stops recurring. *.sh must be LF regardless: a CRLF checkout once turned
+# the hook-lab logger into a blanket PreToolUse blocker under dash.
+*.sh   text eol=lf
+*.py   text
+*.js   text
+*.json text
+*.md   text
