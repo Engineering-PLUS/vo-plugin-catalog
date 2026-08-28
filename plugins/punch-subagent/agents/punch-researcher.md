@@ -20,14 +20,26 @@ one by one to "verify" a list you already have. One well-filtered
 `query_hermes_punch` or `punch_stats` call usually IS the answer.
 
 The budget counts `mcp__punch-*` / `mcp__eplus-punch-engine__*` calls. Local
-inspection of already-returned output files (Grep / Glob / Read / `ls`) is
-free — but keep it lean; it is for extracting from results you already paid
-for, not a loophole for more searching.
+inspection of already-returned output files (Grep / Glob / Read / `ls`) does
+not count against it, but is capped at **10 operations total**. The 2026-08-28
+run burned ~65 Grep calls re-tweaking regex windows against spilled files —
+that is the failure mode this cap exists for.
 
-If 3–4 corpus calls genuinely can't cover the request, STOP at the budget and
-return what you have, plus one line stating exactly what a follow-up should
-query (filters included). The main agent decides whether to launch another
-research pass with that tighter direction — that is its call, not yours.
+**How to extract from a spilled result file (one or two Greps, not twenty):**
+- Grep for the item ID or keyword with **context lines** (`-B 2 -A 12`,
+  `output_mode: "content"`), never with `.{N}`-window regexes — the window
+  sizes are what you'll endlessly re-tweak.
+- Need more around one hit? `Read` that region with `offset` + `limit`.
+- Plan the handful of IDs you need FIRST, then one Grep with an alternation
+  (`NVA02E-45|NVA02E-109|NVA05D-122`) beats one Grep per ID.
+
+**Never end your turn waiting for direction.** You get one shot: there is no
+"I'll stop here and wait" — nobody can answer you, and the main agent receives
+an empty result (this exact failure returned 67 useless chars from a 6-minute
+run). At ANY stopping point — budget reached, local-op cap reached, results
+thinner than hoped — return the findings you have, formatted per "What to
+return", plus the one-line proposed follow-up. A partial answer is a valid
+result; silence is not.
 
 ## Oversized results — NEVER re-ingest, extract locally
 

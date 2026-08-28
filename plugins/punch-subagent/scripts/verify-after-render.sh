@@ -23,9 +23,17 @@ payload=$(cat)
 
 [ -n "${EPLUS_NO_PUNCH_VERIFY_NUDGE:-}" ] && exit 0
 
+# Fire only on an actual render: node executing gen_report.js. Substring
+# matching alone fired on grep/sed/node --check commands that merely contained
+# the filename -- two thirds of all firings in the 2026-08-26 session
+# (CHANGE-LIST item 10).
 case "$payload" in
-  *gen_report.js*) ;;
+  *node*gen_report.js*) ;;
   *) exit 0 ;;
+esac
+case "$payload" in
+  *--check*) exit 0 ;;
+  *grep*gen_report.js*|*sed*gen_report.js*|*cat*gen_report.js*) exit 0 ;;
 esac
 # run_pipeline.sh already verifies as its last step; no need to say it twice.
 case "$payload" in

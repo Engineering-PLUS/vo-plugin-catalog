@@ -18,7 +18,11 @@ try {
     $payload = $raw | ConvertFrom-Json
     $cmd = $payload.tool_input.command
     if (-not $cmd) { exit 0 }
-    if ($cmd -notmatch 'gen_report\.js') { exit 0 }
+    # Fire only on an actual render: node executing gen_report.js. Two thirds of
+    # firings in the 2026-08-26 session were grep/sed/node --check commands that
+    # merely CONTAINED the filename (CHANGE-LIST item 10).
+    if ($cmd -notmatch '(?i)\bnode(\.exe)?("|\s)+[^|;&]*gen_report\.js') { exit 0 }
+    if ($cmd -match '--check') { exit 0 }
 
     # run_pipeline.sh already verifies as its last step; no need to say it twice.
     if ($cmd -match 'run_pipeline\.sh') { exit 0 }

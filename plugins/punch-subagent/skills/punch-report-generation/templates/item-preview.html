@@ -1,0 +1,92 @@
+<!-- item-preview.html: reference markup for the per-item WORDING REVIEW artifact.
+
+     Used by the review stage in SKILL.md: before asking the user any question
+     about an item, publish an HTML artifact staging the item AS CLOSE AS
+     POSSIBLE to how it will appear in the rendered Word document, using this
+     structure and these values. Embed photos and the sheet clip as data: URIs
+     (the normalized thumbnails are small). Substitute every {{placeholder}}.
+
+     Fidelity notes, taken from gen_report.js so this stays in step with it:
+       page       7.0in usable width, Arial throughout
+       heading    "Item N.  Title" -- bold, 13pt, #44546A
+       labels     "Item Description" / "Corrective Action" -- bold, 10pt, #44546A
+       body       10.5pt, #58595B
+       photos     2-column grid, each photo on a 3:4 canvas 1.90in wide,
+                  caption 7.5pt #A6A6A5 under each
+       clip       sheet clip sits right of the meta block, ~3.3in wide
+       empty grid one bare 2-cell row with visible borders (the paste target)
+     If gen_report.js layout constants change, update this file in the same
+     commit. -->
+<title>Item {{display_number}} preview</title>
+<style>
+  :root { color-scheme: light; }
+  body { background: #f2f2f2; margin: 0; padding: 24px; font-family: Arial, Helvetica, sans-serif; }
+  .page {
+    background: #fff; width: 7in; margin: 0 auto; padding: 0.55in 0.5in;
+    box-shadow: 0 2px 14px rgba(0,0,0,.18); color: #58595B;
+  }
+  .letterhead { border-bottom: 3px solid #44546A; padding-bottom: 6px; margin-bottom: 18px;
+    font-size: 8pt; color: #A6A6A5; display: flex; justify-content: space-between; }
+  h1 { font-size: 13pt; color: #44546A; margin: 0 0 10px; }
+  .meta { display: flex; gap: 14px; margin-bottom: 12px; }
+  .meta table { font-size: 9pt; border-collapse: collapse; flex: 1; }
+  .meta td { padding: 2px 8px 2px 0; vertical-align: top; }
+  .meta td.k { color: #A6A6A5; white-space: nowrap; }
+  .clip { width: 3.3in; }
+  .clip img { width: 100%; border: 1px solid #A6A6A5; }
+  .label { font-weight: bold; font-size: 10pt; color: #44546A; margin: 12px 0 4px; }
+  .body { font-size: 10.5pt; line-height: 1.35; margin: 0; }
+  .photos-label { font-weight: bold; font-size: 10pt; color: #44546A; margin: 14px 0 6px; }
+  .grid { display: grid; grid-template-columns: 1.9in 1.9in; gap: 10px; }
+  .ph { border: 1px solid #d9d9d9; }
+  .ph .canvas { width: 1.9in; aspect-ratio: 3 / 4; object-fit: contain; background: #fff; display: block; }
+  .ph .cap { font-size: 7.5pt; color: #A6A6A5; padding: 2px 4px; }
+  .ph.empty .canvas { display: flex; align-items: center; justify-content: center;
+    color: #d9d9d9; font-size: 8pt; }
+  .review-banner { max-width: 7in; margin: 0 auto 14px; padding: 8px 12px; background: #E7E9EE;
+    border-left: 4px solid #44546A; font-size: 9pt; color: #44546A; }
+</style>
+
+<div class="review-banner">
+  Wording review — item {{display_number}} of {{total}}. This is a preview of the
+  Word layout; answer the questions in the chat to lock this item's text.
+</div>
+
+<div class="page">
+  <div class="letterhead"><span>ENGINEERING PLUS — PUNCH REPORT (DRAFT)</span><span>{{walk_date}}</span></div>
+
+  <h1>Item {{display_number}}.&nbsp; {{title}}</h1>
+
+  <div class="meta">
+    <table>
+      <tr><td class="k">PlanGrid ref</td><td>{{plangrid_ref}}</td></tr>
+      <tr><td class="k">Location</td><td>{{location}}</td></tr>
+      <tr><td class="k">Sheet</td><td>{{sheet_display}}</td></tr>
+      <tr><td class="k">Status</td><td>{{status}}</td></tr>
+    </table>
+    <div class="clip"><!-- omit when no sheet clip -->
+      <img src="data:image/jpeg;base64,{{sheet_clip_b64}}" alt="sheet clip">
+    </div>
+  </div>
+
+  <div class="label">Item Description</div>
+  <p class="body">{{description}}</p>
+
+  <div class="label">Corrective Action</div>
+  <p class="body">{{corrective_action}}</p>
+
+  <!-- Photos: omit this whole block when photo_mode is "none". For an item
+       with no photos (photo_mode own_photos/followup), render ONE empty row
+       so the paste target is visible, exactly as the .docx will. -->
+  <div class="photos-label">Photos</div>
+  <div class="grid">
+    <div class="ph">
+      <img class="canvas" src="data:image/jpeg;base64,{{photo_1_b64}}" alt="">
+      <div class="cap">{{photo_1_caption}}</div>
+    </div>
+    <div class="ph empty">
+      <div class="canvas">paste target</div>
+      <div class="cap">&nbsp;</div>
+    </div>
+  </div>
+</div>

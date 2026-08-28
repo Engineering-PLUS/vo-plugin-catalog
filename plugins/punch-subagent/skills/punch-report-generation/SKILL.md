@@ -55,19 +55,39 @@ bash scripts/smoke_test.sh
 This exists because a previous generation of this pipeline documented four
 features its shipped code did not have. Run it; do not assume.
 
-### Work on local disk
+### Work in the local workspace — a CORRECTNESS rule, not an optimisation
 
-EPLUS project folders live on a network share. Batches of small file operations
-against it are the biggest time sink here and the most common cause of a step
-that looks hung — photo normalisation has taken **over two minutes on the share
-versus 2.6 seconds locally**, a >45x difference on 14 MB. Copy in, work locally,
-copy back in small batches.
+**All intermediate work happens in your own workspace. The project folder is
+written to only when a deliverable is finished.** Four field incidents
+(2026-08-28 session) make this a correctness requirement:
 
-**Sync the sources back too, not just the outputs.** This pattern has already
-produced a near-miss: a `drafted_items.json` edit lived only in the local copy,
-the report was rendered from it, and the share's copy was never updated — so the
-document and the file that generates it disagreed and a re-run would have
-silently reverted the change.
+1. **The share is behind a VPN.** When the VPN dropped mid-session, mounted
+   folders read as *empty directories with no error*. A process working in
+   place sees its inputs vanish silently; a local process does not care.
+2. **Latency turns long copies into silent partial failures.** A 217 MB
+   PlanGrid copy exceeded the 120-second tool timeout at 120 of 171 files and
+   reported nothing. (Photo normalisation: 3.0s locally vs over two minutes on
+   the share.)
+3. **A half-written deliverable must never be visible to the reviewer.** A
+   render that fails after writing a partial .docx into the project folder can
+   be opened by the reviewer. Local-then-copy makes every write atomic.
+4. **The share may be reachable by file tools but NOT by bash at all**,
+   depending on how the folder was attached — and every pipeline step is a
+   shell invocation.
+
+The pattern — use `scripts/sync_project.sh` for every share copy; it verifies
+by file count and byte size and refuses an empty source:
+
+1. Copy sources into the workspace, VERIFY the copy. Never trust that a copy
+   finished.
+2. Stamp `_pipeline/` and run everything locally.
+3. Copy back in small batches: the .docx first, then data/, scripts/, build/.
+4. **Sync the sources back too, not just the .docx.** A `drafted_items.json`
+   edit that lives only locally means the document and the file that generates
+   it disagree, and a re-run silently reverts it — a near-miss that has already
+   happened.
+5. Distinguish "empty" from "unreachable" before treating an empty listing as
+   meaningful.
 
 ## The premise: the input is always messy
 
@@ -134,6 +154,56 @@ the rendered document. On the last pull, 34 of 34 photos needed it.
 Walk notes frequently arrive as two near-identical files (`…notes.docx` and
 `…notes(update).docx`). **Diff them and use the newer one**; call out only real
 conflicts. The update usually fixes typos and adds items.
+
+### Step 3.5 — Ask the user how they want the wording set
+
+Once photos are sorted and itemized and BEFORE drafting any item's content,
+ask the user with **AskUserQuestion** (one question, three options):
+
+> Photos are sorted into N items. How do you want to set each item's wording?
+> 1. **Walk every item with me** — preview each item, I confirm or adjust the
+>    wording before it's locked.
+> 2. **Review only the ones you're unsure about** — you draft what's clear, I
+>    only see the low-confidence items.
+> 3. **You draft it** — produce the document; I'll review the finished draft.
+
+"Unsure" in mode 2 means: every `photo_only` and `no_photos` item from the
+consolidate triage, anything whose description is inferred from photo content
+alone, and anything you would mark `confidence: low`.
+
+**The per-item review loop (modes 1 and 2), order is mandatory:**
+
+1. **Render the preview FIRST, then ask.** Publish an HTML artifact staging the
+   item as close as possible to the Word layout — use
+   `templates/item-preview.html` as the reference markup (same fonts, colors,
+   two-column photo grid at Word proportions, sheet clip, blank paste-target
+   row for photo-less items; photos embedded as data: URIs). Use ONE artifact
+   and republish it for each item (same URL updates in place), so the user
+   watches the item change as they answer. Never ask about an item the user
+   cannot currently see.
+2. **Then ask the item's questions with AskUserQuestion** — proposed
+   title/description/corrective action (accept or revise), trade or location
+   when ambiguous, and anything the photo inference was unsure of. Ask only
+   what is genuinely undecidable from the evidence; don't quiz for its own
+   sake.
+3. Record each decision into `data/drafted_items.json` as you go. Wording the
+   user approved or supplied gets `"origin": "user_reviewed"` —
+   `build_master.py` treats it as untouchable (no sanitize rewrites, no voice
+   guard, no recapitalisation) and FAILS LOUDLY if the text would need
+   cleaning, rather than silently altering approved wording.
+
+**Items without photos — always raise it, in every mode.** For each `no_photos`
+item, ask (grouped into one AskUserQuestion when there are several):
+
+> Item N has no photos. Options: **(a)** I'll add my own photos in Word — render
+> the empty photo grid as a paste target; **(b)** no photos apply — drop the
+> grid and the Photos label for this item; **(c)** flag for a follow-up site
+> visit — render the empty grid and note it on the issues list.
+
+Record the answer as `"photo_mode": "own_photos" | "none" | "followup"` on the
+drafted entry. The renderer honors it: `none` suppresses the photo block
+entirely; the other two render one empty grid row sized like a real photo cell
+(invisible-hairline rows are a shipped bug this fixed).
 
 ### Step 4 — Draft a description for every item
 
@@ -331,7 +401,14 @@ It handles three traps, all already solved — do not reimplement:
    no repeated heading; detected, with a fallback to the following page.
 
 It reports which items used the fallback and which are missing — read that output
-rather than assuming.
+rather than assuming. It also **errors on byte-identical clips for two different
+pins**: that has shipped once (two items showing the same drawing, one of them
+therefore wrong) and nobody caught it by eye.
+
+**A Task Report only covers the export window it was generated for.** A
+multi-visit report needs one Task Report export per visit; clips for items from
+an earlier visit are simply absent from a later export. Ask for the missing
+export rather than salvaging clips from a previously rendered document.
 
 ### Step 7 — Assemble and render
 
@@ -413,24 +490,39 @@ These are linked. Do not undo either.
 **No PDF is generated.** The reviewer produces it from Word once markup is done.
 Word recalculates fields on open and on export.
 
-**TOC page numbers are real `PAGEREF` fields**, one per item, pointing at a
-`Bookmark` on each item heading, both halves wrapped in an `InternalHyperlink` so
-entries are clickable, with `features: { updateFields: true }` so Word refreshes
-on open.
+**The contents block is a real Word `TOC` field** (` TOC \o "1-1" \h \z \u `)
+whose **cached result** is the styled entry list — the exact structure Word
+itself saves. On open the cached entries show immediately, so nothing looks
+broken; *Update Table* (or Ctrl+A, F9) regenerates titles, page numbers **and
+entry count** together. Each cached entry still carries a real `PAGEREF` field
+pointing at the item heading's `Bookmark`, wrapped in an `InternalHyperlink`,
+with `features: { updateFields: true }` so Word refreshes on open. Regenerated
+entries take the `TOC1` paragraph style defined on the document, so the look
+survives regeneration.
 
-This replaced a two-pass render that converted to PDF with LibreOffice, harvested
-the page numbers, and baked them in as **static text**. **LibreOffice and Word do
-not paginate identically**, so those numbers were measured in one renderer and
-shown to a reader using another, and being plain text they never recalculated.
-They were simply wrong and permanently so.
+This replaced two earlier designs, each killed by field evidence:
 
-Two transferable rules: **never display a measurement taken from a different
-renderer than the reader will use**, and **when a constraint is removed, delete
-the workaround it forced** — the dry-render step and `toc_page_map.json` are gone,
-not bypassed.
+- a two-pass render that baked **static page numbers** harvested from a
+  LibreOffice dry render — **LibreOffice and Word do not paginate
+  identically**, so the numbers were wrong and permanently so;
+- hand-built entry paragraphs with live `PAGEREF` fields but **static
+  titles** — page numbers self-healed on F9 while deleted items stayed in the
+  list, so the TOC silently rotted (two reports failed this way on the same
+  day, 2026-08-28: one stale after item deletions, one showing 16 entries
+  against 9 items with seven `Error! Bookmark not defined.`). The asymmetry —
+  the body renumbering correctly while the TOC rots — is what misled reviewers.
 
-**Residual limitation:** entry *titles* are static, so deleting an item in Word
-renumbers headings but not TOC labels. Page numbers self-heal, labels do not.
+Transferable rules: **never display a measurement taken from a different
+renderer than the reader will use**; **when a constraint is removed, delete the
+workaround it forced**; and **make the whole structure one field so Word owns
+all of it**, not just the numbers.
+
+`scripts/fix_bookmark_ids.py` runs after every render (wired into
+`run_pipeline.sh`): the docx library emits every bookmark as `w:id="1"` (Word
+keys on the id and discards duplicates — the `Error! Bookmark not defined.`
+bug that shipped in r4) and non-canonical `PAGEREF` instruction text; it fixes
+both. `scripts/fix_toc.py --check` remains as a drift gate for documents
+already in circulation that predate the TOC field.
 
 ### Step 8 — Verify against the OOXML
 
@@ -446,6 +538,24 @@ and that the letterhead is native rather than a pasted bitmap.
 
 Anything genuinely pagination-dependent is not asserted; it is delegated to Word
 by using fields.
+
+**Visual verification closes the gap OOXML checks can't.** An element existing
+in the XML does not mean the page looks right — the empty photo grid once
+shipped verified only by a `<w:tc>` cell count, which cannot distinguish a
+visible paste target from a collapsed hairline row. For layout changes, run
+
+```bash
+python3 scripts/render_preview.py build/report.docx --pages 1,4
+```
+
+It rasterises to PNG via a scratch-dir PDF **which it deletes** — no PDF
+survives to be mistaken for a deliverable (the PDF-block hook allows this
+script by name). Rule: **layout and appearance may be checked in the preview;
+anything numeric must be checked in the OOXML** — the preview's pagination is
+LibreOffice's, not Word's, so never quote a page number from it. The one thing
+neither can prove is Word's own F9 behavior; after any template-level TOC
+change, do the manual acceptance test once: delete an item in Word, Ctrl+A F9,
+confirm the TOC loses the entry and renumbers.
 
 ### Step 9 — Keep the report editable by a human
 
@@ -515,6 +625,36 @@ written down will be broken again.
 **Write the process log from what the code does, not what it should do.** The
 previous package documented four behaviours its code did not have, and each cost
 real time later.
+
+## Revising an existing report — the common case
+
+Almost all real work is a revision (r2…r5 in one week on one project), not a
+clean run from a pull, and the revision path has its own rules:
+
+- **The reviewer's Word edits are the senior source.** Rebuilding from scratch
+  discards them. To recover approved wording from a reviewed .docx, use
+  `scripts/import_reviewed_docx.py` (prototype, assembled from the code that
+  actually recovered 16 write-ups): it matches embedded photos to normalised
+  thumbnails by **32×32 greyscale pixel signature** — exact, unlike caption
+  timestamps, which collide the moment two photos share a minute — and emits
+  drafted entries with `"origin": "reviewer_final"`. It also reveals photos the
+  reviewer silently deleted.
+- **`origin: reviewer_final` and `origin: user_reviewed` text is untouchable.**
+  `build_master.py` refuses to sanitize-rewrite it and fails loudly if it would
+  have to; the voice guard does not apply to it. Fix source text explicitly or
+  not at all.
+- **Reviewer pin merges live in the judgment layer.** Record them as a `merges`
+  block in `drafted_items.json` — `{"items": [...], "merges": [{"into": 22,
+  "from": 23, "drop_photos": ["…"]}]}` — which `build_master.py` applies
+  in-memory (photos folded in chronological order, absorbed pin auto-omitted).
+  Never mutate `items.json` to represent a human decision; a re-run of
+  consolidate would erase it. (`scripts/merge_pins.py` is the older
+  items.json-mutating form; prefer the merges block.)
+- **New site visits need their own Task Report export** for sheet clips (see
+  Step 6); do not salvage clips from the previous render.
+- Re-run the wording review (Step 3.5) **only for new or changed items** — a
+  revision must never re-ask questions the user already answered. Their
+  previous answers are in `drafted_items.json` with `origin: user_reviewed`.
 
 ## House policy
 

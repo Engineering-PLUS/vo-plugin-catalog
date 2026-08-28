@@ -26,6 +26,12 @@ payload=$(cat)
 
 [ -n "${EPLUS_NO_PUNCH_PDF_GUARD:-}" ] && exit 0
 
+# scripts/render_preview.py rasterises for INSPECTION only: scratch-dir
+# conversion, PNGs kept, PDF deleted. The deliverable ban does not apply.
+case "$payload" in
+  *render_preview.py*) exit 0 ;;
+esac
+
 # Both conditions must hold: a PDF conversion, and punch report material.
 case "$payload" in
   *soffice*|*libreoffice*) ;;
