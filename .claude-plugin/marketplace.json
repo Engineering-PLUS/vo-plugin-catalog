@@ -129,12 +129,12 @@
     {
       "name": "model-routing",
       "displayName": "Model Routing & Context Management",
-      "description": "Routes work to the right-sized model on a paid 3P deployment: Fable/Sonnet/Opus worker subagents plus a skill that decides by task difficulty AND stakes (an engineering firm's client-facing output gets an Opus review even when it looks simple). No hooks yet.",
+      "description": "Routes work to the right-sized model on a paid 3P deployment: Fable/Sonnet/Opus worker subagents, a skill that decides by task difficulty AND stakes (client-facing output gets an Opus review even when it looks simple) plus main-thread context management, and hooks that deliver the policy (SessionStart digest, stakes hints), gate fable-frontier spawns behind user approval, and log every routing decision into the session export.",
       "author": {
         "name": "Victor Ortega",
         "email": "victor.ortega@eplusadvisors.com"
       },
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./plugins/model-routing",
       "category": "development",
       "tags": ["internal", "routing", "cost", "context", "subagents"],

@@ -2,8 +2,11 @@
 
 Helps route work to the right-sized model on a paid 3P deployment, where every
 message is billed and most people never think about which model is running.
-Three model workers as subagents plus a skill that teaches the main model
-**when** to use each. No hooks yet, by request.
+Three model workers as subagents, a skill that teaches the main model **when**
+to use each, and — as of 0.2.0 — hooks that deliver, observe, and enforce the
+policy. The guidance-only 0.1.0 was field-tested 2026-08-26/28 and **never
+engaged**: zero worker spawns, the skill never loaded, and 45 hours of work ran
+on the Opus [1m] main thread. Policy that isn't in context routes nothing.
 
 ## The actual cost order (this is the whole point)
 
@@ -50,23 +53,40 @@ final. The stakes decide, not the word "email."
 | `agents/sonnet-standard.md` | Sonnet 5 — the cheapest worker and the default; flags high-stakes output for Opus review. |
 | `agents/opus-deep.md` | Opus 5 — hard reasoning and review of consequential output. |
 | `agents/fable-frontier.md` | Fable 5 — most expensive/most capable; reserved for the hardest problems, told to flag when it wasn't needed. |
-| `skills/model-routing/SKILL.md` | The routing guidance: the real cost order, the two-axis rule, the engineering-firm stakes nuance, and how to explain models to users in plain language. |
+| `skills/model-routing/SKILL.md` | The routing guidance: the real cost order, the two-axis rule, the engineering-firm stakes nuance, main-thread context management (the other half of the bill), and how to explain models to users in plain language. **The cost table lives here and only here** — agents and README reference it relatively so a price change is a one-file edit. |
+| `hooks/hooks.json` + `scripts/*.ps1` | The delivery/enforcement layer (all field-proven mechanisms from punch-subagent): a SessionStart policy digest, a UserPromptSubmit stakes hint on client-facing vocabulary, a PreToolUse:Agent **fable gate** (`permissionDecision: ask` on fable-frontier spawns; `EPLUS_ALLOW_FABLE=1` disables), a SubagentStart probe that logs every worker spawn to `routing.log` in the exported session dir and banners it via MessageDisplay, and a SubagentStop echo of opus-deep review verdicts (`review-verdicts.log` + banner). |
 
 ## Test procedure (Cowork machine)
 
-1. Enable `model-routing` (`defaultEnabled: false`).
-2. Watch which worker the main model routes to:
+1. Refresh the marketplace clone, confirm 0.2.0, enable `model-routing`
+   (`defaultEnabled: false`).
+2. Run the calibration prompts and watch the **[[model-routing]] banner** —
+   every worker spawn is announced there, so routing is visible without
+   guessing:
    - *"Clean up and alphabetize this list of device tags"* → `sonnet-standard`
      (the cheapest worker and the floor).
    - *"Draft a summary of these meeting notes"* → `sonnet-standard`.
    - *"Rewrite this email to the client confirming the ductbank routing"* →
-     Sonnet draft **plus** an `opus-deep` review, not a bare cheap draft.
+     the UserPromptSubmit hint should fire, then a Sonnet draft **plus** an
+     `opus-deep` review whose verdict shows in the banner.
+   - *"Have fable-frontier polish this sentence"* → the **fable gate** should
+     interrupt with an approval prompt, not spawn silently.
    - *"Which model is cheaper for quick reformatting?"* → a plain-language
      explanation with the correct cost order (Sonnet < Opus < Fable).
-3. **Calibrate:** does the main model apply difficulty-AND-stakes reliably, and
-   does it correctly treat Fable as the expensive extreme (not a default)?
+3. Export the session and drop it in Log Lens: `routing.log` (every Agent
+   spawn with its subagent_type, plus worker starts) and `review-verdicts.log`
+   appear under Logs. Zero spawns in `routing.log` on a work session is the
+   0.1.0 failure mode — if you see it again, the SessionStart digest isn't
+   landing; check for its hook attachment in the transcript.
+4. **Calibrate:** does the main model apply difficulty-AND-stakes reliably,
+   does it treat Fable as the expensive extreme, and does it surface Opus
+   review verdicts verbatim?
 
 Models are referenced by alias (`sonnet`/`opus`/`fable`), which resolve to the
-newest of each family and are checked against your deployment's allowed-models
-policy. This is guidance, not enforcement — with no hooks, nothing forces a
-route; the skill and the workers' escalation notes steer the main model.
+newest of each family, subject to your deployment's allowed-models policy. **If
+a policy blocks an alias** (e.g. no Fable on a fleet machine), the worker's
+spawn fails at Agent-tool time — treat that as "this tier is unavailable, use
+the next one down," and say so to the user; nothing degrades silently. One
+known unknown, flagged in hooks.json: punch-subagent also runs a MessageDisplay
+banner drain, and stacked displayContent from two plugins on the same reply is
+unverified — the first fleet run with both enabled settles it.

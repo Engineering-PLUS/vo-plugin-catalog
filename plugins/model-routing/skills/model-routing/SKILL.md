@@ -61,6 +61,36 @@ version needs `opus-deep` eyes on it. The word "email" didn't decide that — th
 stakes did. And "important" does **not** mean "send it to Fable" — Opus review
 is the high-stakes tool; Fable is the extreme-difficulty tool.
 
+**Surface the review verdict.** When `opus-deep` reviews something, its verdict
+(sound as-is / fix X / don't send) must reach the user verbatim — one quoted
+line, not your paraphrase. A review nobody sees is a review that didn't happen.
+Note the fable gate: spawning `fable-frontier` asks the user to approve the
+spend first — that prompt is correct behavior, not an error.
+
+## Context is the other cost — manage the MAIN thread
+
+The worker table above is half the bill. The other half is this conversation
+itself, and on a long session it is usually the BIGGER half: a real two-day
+session here ran ~45 hours on the Opus 1M-context main thread — 3.7M input
+tokens, 545k output, 71M cache reads — with zero worker delegations. Rules:
+
+- **Know what this session runs on.** If the main model is Opus or Fable,
+  every token you push down to `sonnet-standard` is 2.5–5x cheaper, and the
+  case for delegating bulk work is proportionally stronger. On a Sonnet main
+  thread, delegation is about context hygiene more than price.
+- **The long-context surcharge is real.** Past ~200K tokens of context, input
+  is billed at a premium tier. A 1M-context session that keeps growing pays it
+  on every subsequent message. Keeping the main thread lean is a direct cost
+  control, not tidiness.
+- **Keep bulk content out of the main thread.** Big file reads, long tool
+  dumps, and research sweeps belong in a worker that returns a summary. When a
+  tool result spills to a file, Grep the file for what you need — never
+  re-ingest it whole (the punch-researcher oversized-result protocol
+  generalizes to every worker).
+- **Resume, don't re-explain.** A follow-up on work a worker already did goes
+  back to that worker, whose context already holds the material — cheaper and
+  better than rebuilding the story in the expensive thread.
+
 ## Also worth doing
 
 - **Delegate verbose work** even when the model is the same, to keep this

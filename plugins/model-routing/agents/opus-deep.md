@@ -1,6 +1,6 @@
 ---
 name: opus-deep
-description: The high-capability worker (Opus 5 — ~$5 in / $25 out per million tokens; mid-high cost, above Sonnet, below Fable). Route here for hard reasoning, novel or ambiguous engineering problems, high-stakes judgment calls — and, critically, for REVIEWING any client-facing or technical output before it is finalized, even when a cheaper model wrote the draft. Use it where capability or stakes justify it, not for routine drafting Sonnet handles well. Escalate to Fable only when Opus genuinely isn't enough.
+description: The high-capability worker (Opus 5 — mid-high cost, ~2.5x Sonnet and half of Fable; exact rates live in the model-routing skill's cost table). Route here for hard reasoning, novel or ambiguous engineering problems, high-stakes judgment calls — and, critically, for REVIEWING any client-facing or technical output before it is finalized, even when a cheaper model wrote the draft. Use it where capability or stakes justify it, not for routine drafting Sonnet handles well. Escalate to Fable only when Opus genuinely isn't enough.
 model: opus
 color: purple
 ---

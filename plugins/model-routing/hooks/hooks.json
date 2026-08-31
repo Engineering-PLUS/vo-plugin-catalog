@@ -1,0 +1,51 @@
+{
+  "description": "Delivery + enforcement for the routing policy, added 2026-08-28 after field evidence showed the guidance-only version never engaged (zero worker spawns and the skill never loaded across two test sessions while 45h ran on the Opus [1m] main thread). All PURE POWERSHELL host commands. (1) routing-digest on SessionStart injects a 4-line policy digest as additionalContext (field-proven channel) so the rule is in context from turn one. (2) routing-hint on UserPromptSubmit adds a one-line stakes reminder ONLY when the prompt matches client-facing vocabulary. (3) fable-gate on PreToolUse:Agent logs every spawn's subagent_type and returns permissionDecision 'ask' for fable-frontier spawns (the ~2x-Opus tier requires an explicit user click; EPLUS_ALLOW_FABLE=1 disables). (4) routing-probe on SubagentStart (scoped to this plugin's workers -- punch-subagent's wildcard probe already covers discovery) logs to routing.log in plugin-data AND the exported session dir, and queues a [[model-routing]] banner drained by the MessageDisplay entry (displayContent, display-only, proven to render in Cowork). (5) show-review-verdict on SubagentStop scoped to opus-deep banners a 220-char verdict excerpt and writes the full text to review-verdicts.log in the exported session dir, closing the stakes-review loop. NOTE: punch-subagent also runs a MessageDisplay drain; if both plugins queue banners on the same reply, behavior of stacked displayContent is unverified -- field-check. Hints off: EPLUS_NO_ROUTING_HINTS=1. Review echo off: EPLUS_NO_REVIEW_ECHO=1.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/routing-digest.ps1\"" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/routing-hint.ps1\"" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/fable-gate.ps1\"" }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "^model-routing:(sonnet-standard|opus-deep|fable-frontier)$",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/routing-probe.ps1\"" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^model-routing:opus-deep$",
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/show-review-verdict.ps1\"" }
+        ]
+      }
+    ],
+    "MessageDisplay": [
+      {
+        "hooks": [
+          { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/routing-probe.ps1\"" }
+        ]
+      }
+    ]
+  }
+}

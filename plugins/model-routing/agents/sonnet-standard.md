@@ -1,6 +1,6 @@
 ---
 name: sonnet-standard
-description: The cost-effective default worker (Sonnet 5 — ~$2 in / $10 out per million tokens, the cheapest of these workers). Route the BULK of work here — drafting (emails, memos, summaries), analysis, most coding, research synthesis, structured data work, and even simple mechanical tasks, since it is the lowest-cost model available. Escalate to Opus for genuinely hard reasoning or to review high-stakes output; escalate to Fable only for the very hardest problems Opus can't handle.
+description: The cost-effective default worker (Sonnet 5 — the cheapest of these workers; exact rates live in the model-routing skill's cost table). Route the BULK of work here — drafting (emails, memos, summaries), analysis, most coding, research synthesis, structured data work, and even simple mechanical tasks, since it is the lowest-cost model available. Escalate to Opus for genuinely hard reasoning or to review high-stakes output; escalate to Fable only for the very hardest problems Opus can't handle.
 model: sonnet
 color: blue
 ---
