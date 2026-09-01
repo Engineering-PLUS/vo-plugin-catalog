@@ -25,6 +25,16 @@ pip install pypdf pillow pypdfium2
 - `pypdf` + `pillow` — embedded-image extraction and rotation fixing
 - `pypdfium2` — rendering pages as displayed (the only way to see markup)
 
+## Prefer the PlanGrid MCP when it is connected
+
+If `mcp__plangrid__*` tools are available, use them before parsing PDFs:
+`pull_tasks` / `get_task` / `get_photos` return the live data (photos come
+with signed URLs and correct EXIF), and `get_task_clips` /
+`ingest_task_report` produce the per-item annotated sheet clips
+server-side. Everything below remains the ground truth for working from a
+PDF alone — and the Task Report PDF is still the only clip source for
+unpublished pins on projects where the user chooses not to publish.
+
 ## How PlanGrid stores data (the three traps)
 
 ### 1. The FULL drawing is embedded on every issue page

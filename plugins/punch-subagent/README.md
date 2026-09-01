@@ -67,11 +67,11 @@ returns partial findings plus a proposed follow-up query, and the **main agent
 decides** whether to relaunch with tighter direction. Local inspection of
 spilled result files (Grep/Read windows/ls) is free.
 
-## Requirement: managed punch server
+## Requirement: managed servers (punch + plangrid)
 
-This plugin bundles no MCP server. The punch engine must be available as a
-bootstrap **managed** server (same pattern as `error-reporting-managed`), so
-the token never enters this repo:
+This plugin bundles no MCP server. Both engines come from bootstrap
+**managed** servers (same pattern as `error-reporting-managed`), so no token
+ever enters this repo:
 
 ```json
 {
@@ -83,6 +83,14 @@ the token never enters this repo:
   "coworkEgressAllowedHosts": ["20.9.42.66"]
 }
 ```
+
+**PlanGrid:** the skills additionally expect a managed server named
+`plangrid` (tools `mcp__plangrid__*`). Its URL, token, and egress entries
+live only in the bootstrap config — the operational note that matters here
+is that `get_task_clips` / `get_photos` results are **curl'd directly**, so
+the egress allowlist must cover the hosts those file/signed URLs are served
+from, not just the MCP server itself. A missing egress host fails the
+download, not the tool call — which is how it will present in a session.
 
 **The managed server's `name` determines the tool prefix**, and the subagent's
 `tools` allowlist must include it — the exact bug the first test hit
@@ -104,3 +112,9 @@ name needs `mcp__<that-name>` added to its `tools`.
    `subagent-final-messages.log` should appear under Logs.
 5. For the report half: `/punch-report` in a project folder with a PlanGrid
    pull, per `skills/punch-report-generation/SKILL.md`.
+6. **PlanGrid MCP:** confirm the managed `plangrid` server completes its
+   OAuth sign-in on Cowork (unproven route — record the result), then
+   `get_task_clips` on a scoped set and check all three result buckets
+   behave (`mapped` downloads into `build/sheet_clips_jpg/`, `ambiguous`
+   routes to the Task Report path, `unpublished` raises the publish-or-export
+   question instead of silently picking).

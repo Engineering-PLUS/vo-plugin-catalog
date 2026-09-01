@@ -24,15 +24,19 @@ mid-run before, which costs a restart:
 
 | Input | Required? | Notes |
 |---|---|---|
-| PlanGrid pull | yes | a directory containing `tasks.json` |
-| **PlanGrid Task Report PDF** | for pin clips | **not part of an API pull.** Exported separately. The only source of per-item annotated sheet clips. |
+| PlanGrid pull | yes | a directory containing `tasks.json`, **or** pull it live with `mcp__plangrid__pull_tasks` when the PlanGrid MCP is connected — it returns the tasks plus a coverage manifest stating exactly what changed since the previous pull |
+| **Pin clips source** | for pin clips | Tiered — see Step 6. Published pins: `mcp__plangrid__get_task_clips` gets them directly, no export needed. Unpublished pins: **ask the user whether to publish the tasks or run a Task Report export** and provide it (paste the signed report URL to `mcp__plangrid__ingest_task_report`, or hand over the PDF for local extraction). |
 | Scope | yes | which item numbers this report covers, and what a prior report already covered |
 | Walk notes | optional | often arrive as two near-identical files |
 
-**Ask for the Task Report and the scope up front.** Both were mid-run
-discoveries on the last job. If the Task Report is genuinely unavailable the
-pipeline still runs and items render `(no pin clip)`, but say so before drafting
-rather than after.
+**Resolve the clip source and the scope up front.** Both were mid-run
+discoveries on the last job. When the PlanGrid MCP is connected, run
+`get_task_clips` on the scoped item numbers FIRST — its result tells you
+which items are covered and which need the user's decision (see Step 6),
+so you never ask for an export you don't need. Without the MCP, ask for
+the Task Report PDF as before. If clips are genuinely unavailable the
+pipeline still runs and items render `(no pin clip)`, but say so before
+drafting rather than after.
 
 **Use `AskUserQuestion` to get the issuance date.** Do not infer it, do not use
 today's date, and do not leave it blank. The issuance date is a contractual fact
@@ -375,8 +379,38 @@ invent wording to fill the space.
 
 ### Step 6 — Sheet clips
 
-Per-item annotated clips — the drawing with the pin stamp — come only from the
-**PlanGrid Task Report PDF**.
+Per-item annotated clips — the drawing with the pin stamp — come from the
+**PlanGrid Task Report PDF** or, for published pins, directly from the
+**PlanGrid MCP**.
+
+#### Path A — PlanGrid MCP (preferred when connected)
+
+`mcp__plangrid__get_task_clips(project, numbers)` renders each sheet with and
+without annotations server-side and returns crops in the same output contract
+as `extract_sheet_clips.py`. Its result partitions the items — act on each
+bucket, don't average over them:
+
+- **`mapped`** — clip produced. Download each file URL with curl into
+  `build/sheet_clips_jpg/` and fetch `sheet_clip_dims_jpg.json` alongside it
+  (the hosts are on the egress allowlist).
+- **`ambiguous`** — several same-color/same-stamp pins share a sheet; rendered
+  pins carry stamp text, not task numbers, so the mapping is honestly
+  undeterminable. These items need the Task Report path below.
+- **`unpublished`** — the pins exist only on the creator's personal layer and
+  cannot be rendered. **Ask the user, with both options**: (a) publish the
+  tasks in PlanGrid, then re-run `get_task_clips`; or (b) run a Task Report
+  export and provide it. Never silently pick one — publishing changes what
+  the whole project team sees.
+
+#### Path B — Task Report export
+
+For ambiguous or unpublished items, or when the MCP is not connected. Two ways in:
+
+- The user pastes the report's signed URL (valid ~30 days):
+  `mcp__plangrid__ingest_task_report(url)` downloads it, extracts the clips
+  server-side, and returns the same found/missing/duplicates manifest.
+  Download the clip files as in Path A.
+- The user hands over the PDF file: run the local extractor as below.
 
 ```bash
 python3 scripts/extract_sheet_clips.py "<Task Report>.pdf" build/sheet_clips_jpg \
