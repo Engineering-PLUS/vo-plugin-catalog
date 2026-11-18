@@ -24,8 +24,10 @@ better for that.
 
 1. **`open_canvas` once per task.** Give it a title and the blocks. It returns a `canvas_id`.
 2. **`update_canvas` for every later change** to that panel. Never call `open_canvas` again for the
-   same task: each call makes a second panel in the conversation and marks the first one
-   "replaced", which confuses the user.
+   same task: each call makes a second panel in the conversation, which confuses the user. When a
+   new panel really must take over from an older one of yours, pass `"replaces": "<old canvas_id>"`
+   to `open_canvas`; the older panel then tells the user to look at the new one and takes no more
+   answers.
 3. **To ask something, add a `question` block, then call `await_canvas`.** It waits up to 40 seconds
    and returns `status: "answered"` with the events, or `status: "waiting"`.
 4. **On `"waiting"`**, call `await_canvas` once more if the question is quick. Otherwise end your turn
@@ -111,7 +113,15 @@ says which one.
 
 Some hosts do not show panels. If `await_canvas` returns `"view_connected": false`, or `get_canvas`
 shows it a few seconds after opening, tell the user the panel is not available here and ask the
-question in chat instead. Do not keep waiting.
+question in chat instead. Do not call `await_canvas` a second time: one wait with no view connected
+is the answer.
+
+A panel can only appear when the `canvas` server is one the desktop app manages itself (added in the
+app's settings, or through the organisation's managed servers). If the canvas tools you see are named
+`mcp__plugin_...`, they come from a plugin's own server and no panel will appear; say so.
+
+Canvases are kept on disk for two weeks after their last use, so a panel in an older conversation
+still works, and an answer given there is collected by the next `await_canvas` for that `canvas_id`.
 
 ## Checking a new machine
 

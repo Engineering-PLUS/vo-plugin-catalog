@@ -1,20 +1,19 @@
 {
     "plugin":  "cowork-canvas",
-    "version":  "0.1.0",
+    "version":  "0.2.0",
     "source_repo":  "cowork-canvas",
     "source_path":  "src/ and plugin/ in cowork-canvas; edit there, never in a catalog copy",
-    "git_commit":  "f7685db36b64e18c0c9c2d109d731e1a7d917195",
+    "git_commit":  "26e66a881aa21de6d1a2cd23acbdde39f250bcd9",
     "dirty":  false,
     "dirty_files":  0,
     "runtime":  ".NET 10, framework-dependent, win-x64",
     "line_endings":  "LF, except server/start.cmd (CRLF)",
     "files":  {
                   ".gitattributes":  "80c7df65bea5c81763551557a4b6a58006ccab2d89a1bac75414e3ea1bc69bd9",
-                  ".mcp.json":  "2b4602c6238d527b09d9bad1c6019df2bb9f14865122e1130778b5066b5bd129",
-                  "commands/canvas-demo.md":  "18228fc7d9a7faff3fd7b35a10e910110d0c1b802c399ad0747cfaf94c5ce077",
-                  "README.md":  "9cd0a34012086e1c276794764661bc65362686347336690d74609ed1b2f95e99",
-                  "server/bin/CanvasMcp.deps.json":  "c4102b125cc587f352e9ab11dfe85cd447ba90c1d417c07be4822f46e78d07d6",
-                  "server/bin/CanvasMcp.dll":  "288f797dfe4f46c0e28469d1c840c0bf323b7e1e3fda88641de7013fef35efac",
+                  "commands/canvas-demo.md":  "749987746e5e1755025bc0f83c5a4ecaa8113a42802a5d7e95a8d7b1fc5a50c2",
+                  "README.md":  "7299d70ca91d050fc9c4ad7baa5e0be782358fb7901e0083e2a84e00c07c43ca",
+                  "server/bin/CanvasMcp.deps.json":  "5ffb5a7fc26d100dd854093feb35ab07639172a0de89e7de7c464d067b29b3f1",
+                  "server/bin/CanvasMcp.dll":  "4beb1e1525b46d5758875e2989f5e99acf86af2b3d4ea03ab9a773321fa1f1cc",
                   "server/bin/CanvasMcp.runtimeconfig.json":  "2ca90a18bac3b48286c20acd3c1ae4f83fa38de5acf4b2f8cdd277bf90dc9bd7",
                   "server/bin/libSkiaSharp.dll":  "1b0eabbe6738818a2e9e58bc09fb7032dfabbd5e93f65eb4f604d5000fc4b3cd",
                   "server/bin/Microsoft.Extensions.AI.Abstractions.dll":  "a3216886dec2b2528b2d7212c438d21c3d6de2061b500bd2ea505a41f896f8d3",
@@ -55,8 +54,8 @@
                   "server/bin/System.Diagnostics.EventLog.dll":  "5e6301cc6c2c3e287c29f1c585f36047f0e42047d163de602a07014028a0cea5",
                   "server/bin/System.Diagnostics.EventLog.Messages.dll":  "403a772d71ed4a5f537bac3e02746f5acc4a13d73bd895fc564af4866cb0e7b6",
                   "server/start.cmd":  "c8160188b6f8744c3c530132dc3d27f57f4813c2d62276f04efa2c21f5eefb5c",
-                  "server/tools.json":  "bf0e1a1e72e900f2a57d9e0626756dc54b564ee9029f3e7b5a8a475e0a8adcff",
-                  "skills/canvas-rules/SKILL.md":  "37c02cca83efd3b313106ac8877a26b544ad2894a9576e3e834b8c2dc91a08ef",
+                  "server/tools.json":  "e02989dc5b771c2e7be1239d568a142f06d31d2d1081c58eaee67af805775b31",
+                  "skills/canvas-rules/SKILL.md":  "ccb7b915693afed2e523c09e945c93e443392c38ea714f347a23c5b36a16bbab",
                   "THIRD-PARTY-NOTICES.md":  "a57a520c3b4f9d31e4e5a1b6410b1bdc534e9206350f3ba1880dae8ffea8845c"
               }
 }

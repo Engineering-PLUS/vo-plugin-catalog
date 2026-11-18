@@ -5,8 +5,10 @@ description: Open a demo canvas and report what this machine and this host suppo
 Run the Cowork Canvas field test. Do each step in order and keep the results for the report at the end.
 If a step fails, record the exact error text and continue with the next step.
 
-1. Call `canvas_self_check`. Record `ok`, `runtime`, `total_ms`, and `pdf_render` (including any
-   `error_type` and `error`).
+1. Call `canvas_self_check`. Record `ok`, `runtime`, `total_ms`, `server_instance`, and `pdf_render`
+   (including any `error_type` and `error`). Also record the full name of the tool you called: a name
+   starting with `mcp__canvas__` means the app manages the server; a name starting with `mcp__plugin_`
+   means a plugin started it, and no panel will appear.
 
 2. Call `open_canvas` with exactly this:
 
@@ -29,8 +31,10 @@ If a step fails, record the exact error text and continue with the next step.
 }
 ```
 
-3. Call `await_canvas` with `wait_s: 40`. If the status is `"waiting"`, call it once more. If it is
-   still `"waiting"`, tell the user in one line that the questions are in the panel, and end your turn.
+3. Call `await_canvas` with `wait_s: 40`. If the result has `"view_connected": false`, no panel
+   appeared: do not wait again, skip to step 5, and say so in the report. Otherwise, if the status is
+   `"waiting"`, call it once more. If it is still `"waiting"`, tell the user in one line that the
+   questions are in the panel, and end your turn.
    Continue from step 4 when a message starting with `Canvas answer` arrives, or when the user says to
    continue. Record whether the answers arrived through `await_canvas` directly, or only after a
    `Canvas answer` message woke you.
