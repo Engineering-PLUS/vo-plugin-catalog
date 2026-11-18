@@ -1,6 +1,15 @@
 {
-  "version": "0.2.2",
+  "version": "0.3.0",
   "tools": [
+    {
+      "name": "canvas_host_status",
+      "title": "Canvas server status",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": true,
+      "open_world": false,
+      "meta": null
+    },
     {
       "name": "open_canvas",
       "title": "Open canvas",

@@ -61,4 +61,5 @@ set "RUN=%HERE%bin"
 :run
 rem One line on purpose: cmd reads it whole before running it, so nothing is read from this
 rem file after the server exits, even if an update has replaced the file in the meantime.
-"%DOTNET%" "%RUN%\CanvasMcp.dll" & exit
+rem %* passes on the mode the plugin's .mcp.json asks for (--host).
+"%DOTNET%" "%RUN%\CanvasMcp.dll" %* & exit
