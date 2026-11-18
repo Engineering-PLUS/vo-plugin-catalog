@@ -1,6 +1,6 @@
 ---
 name: canvas-rules
-description: This skill should be used before the first Cowork Canvas tool call of a session (open_canvas, update_canvas, await_canvas, get_canvas, close_canvas, canvas_self_check, canvas_host_status), and whenever the user asks to "show me a panel", "put that in the panel", "ask me in the panel", "open the control panel", "show progress while you work", or when a choice, an approval or a set of results would be clearer on screen than in chat. It covers when a panel is worth opening, the one-panel-per-task rule, the block types, how to ask a question and collect the answer, and what to do when the host shows no panel.
+description: This skill should be used before the first Cowork Canvas tool call of a session (open_canvas, update_canvas, await_canvas, get_canvas, close_canvas, canvas_self_check), and whenever the user asks to "show me a panel", "put that in the panel", "ask me in the panel", "open the control panel", "show progress while you work", or when a choice, an approval or a set of results would be clearer on screen than in chat. It covers when a panel is worth opening, the one-panel-per-task rule, the block types, how to ask a question and collect the answer, and what to do when the host shows no panel.
 ---
 
 # Cowork Canvas: rules for using the panel
@@ -85,7 +85,7 @@ An option is a string, or `{"label": "...", "detail": "..."}` for a second line 
 After the answer, show progress with one call:
 
 ```json
-{ "canvas_id": "c-1a2b3c", "ops": [
+{ "canvas_id": "c-k3x7p2m5w4q6z2a7n5b3", "ops": [
   { "op": "patch", "id": "progress", "fields": { "items": [
     { "label": "Ownership check", "state": "ok" }, { "label": "Dry run", "state": "ok" },
     { "label": "Your go-ahead", "state": "ok" }, { "label": "Real run", "state": "run" } ] } }
@@ -116,22 +116,24 @@ shows it a few seconds after opening, tell the user the panel is not available h
 question in chat instead. Do not call `await_canvas` a second time: one wait with no view connected
 is the answer.
 
-Whether a panel appears depends on how the plugin was installed, not on anything you do. If none
+Whether a panel appears depends on the program you are running in, not on anything you do. If none
 appears, say so plainly and carry on in chat; do not suggest the user change their setup unless they
 ask why.
 
-Canvases are kept on disk for two weeks after their last use, so a panel in an older conversation
-still works, and an answer given there is collected by the next `await_canvas` for that `canvas_id`.
+Canvases are kept for two weeks after their last use, so a panel in an older conversation still
+works, and an answer given there is collected by the next `await_canvas` for that `canvas_id`.
+
+Every tool but `open_canvas` and `canvas_self_check` needs the `canvas_id`. Keep the one
+`open_canvas` returned; there is no way to look a canvas up afterwards.
 
 ## When the canvas tools are missing
 
-The panel tools come from a small server on this machine that the plugin keeps running. In the first
-session after sign-in it may not have been running yet when the session started, and then `open_canvas`
-and the other tools are not there. Call `canvas_host_status`: it says whether the server runs now. If
-it does, tell the user the panel will be available in the next new session, and carry on in chat.
+The panel tools come from the `cowork-canvas` connector, a server the company hosts. If `open_canvas`
+and the other tools are not available in a session, the connector is not set up or not connected on
+this machine. Say so in one line and carry on in chat. Do not try to reach the server another way.
 
-## Checking a new machine
+## Checking the server
 
-`canvas_self_check` reports whether this machine can run the server's native parts (it renders a PDF
-page to an image) and how long that took. Call it when the plugin was just installed, or when a canvas
-tool fails with an error that is not about your input.
+`canvas_self_check` reports the server's version, which programs connected to it and whether each
+said it can show panels, and recent fetches of the panel page. Call it when a canvas tool fails with
+an error that is not about your input, or when the user asks why no panel appears.
