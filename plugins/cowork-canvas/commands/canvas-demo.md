@@ -5,10 +5,10 @@ description: Open a demo canvas and report what this machine and this host suppo
 Run the Cowork Canvas field test. Do each step in order and keep the results for the report at the end.
 If a step fails, record the exact error text and continue with the next step.
 
-1. Call `canvas_self_check`. Record `ok`, `runtime`, `total_ms`, `server_instance`, and `pdf_render`
-   (including any `error_type` and `error`). Also record the full name of the tool you called: a name
-   starting with `mcp__canvas__` means the app manages the server; a name starting with `mcp__plugin_`
-   means a plugin started it, and no panel will appear.
+1. Call `canvas_self_check`. Record `ok`, `runtime`, `total_ms`, `server_instance`, the whole `client`
+   object (`name`, `version`, `declares_mcp_apps`, `mcp_apps_capability`), and `pdf_render` (including
+   any `error_type` and `error`). Also record the full name of the tool you called, exactly as it
+   appears to you, prefix included: it shows how this machine started the server.
 
 2. Call `open_canvas` with exactly this:
 
@@ -44,7 +44,12 @@ If a step fails, record the exact error text and continue with the next step.
    answers" to `ok`, "Panel updated by Claude" to `ok`, "Report written" to `run`. Ask the user whether
    the panel changed in place without a second panel appearing.
 
-5. Call `get_canvas` and record the `host` section: `host`, `capabilities`, `display_mode`,
+5. Call `canvas_self_check` again and record `panel_page_reads` in full: every entry's `at`,
+   `server_instance` and `client`, or that the list is empty. An empty list after `open_canvas` means
+   the host never fetched the panel page; an entry means it fetched the page, so if no panel is
+   visible the fault is after that point.
+
+   Then call `get_canvas` and record the `host` section: `host`, `capabilities`, `display_mode`,
    `available_display_modes`, `viewport`, and everything under `tests` (`tool_call_ms`,
    `six_parallel_calls_ms`, `send_message`, `update_model_context`, `display_mode_request`).
    If `host` is missing, record that the panel never reported.
@@ -52,6 +57,6 @@ If a step fails, record the exact error text and continue with the next step.
 6. Set "Report written" to `ok` with `update_canvas`, then call `close_canvas`.
 
 7. Write the report in chat as a short table: machine name if you know it, self-check result and time,
-   whether the panel appeared, whether updates arrived in place, how the answers arrived, whether
+   the tool name prefix, the `client` object, the `panel_page_reads` list, whether the panel appeared, whether updates arrived in place, how the answers arrived, whether
    fullscreen, messages and model context were accepted, the tool-call timings, and every error you
    recorded, word for word.

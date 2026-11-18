@@ -15,7 +15,7 @@
         "email": "victor.ortega@eplusadvisors.com"
       },
       "keywords": ["mcp"],
-      "version": "0.2.0",
+      "version": "0.2.1",
       "source": "./plugins/cowork-canvas",
       "category": "development",
       "tags": ["internal", "mcp", "panel", "revit"],

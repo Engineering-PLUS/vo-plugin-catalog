@@ -1,0 +1,9 @@
+{
+  "name": "cowork-canvas",
+  "version": "0.2.1",
+  "description": "An interactive panel for Claude: Claude opens one panel in the conversation, keeps it up to date while it works, and collects what the user answers in it. Bundles the canvas MCP server, which runs on the .NET 10 runtime already on the machine.",
+  "author": {
+    "name": "Victor Ortega",
+    "email": "victor.ortega@eplusadvisors.com"
+  }
+}

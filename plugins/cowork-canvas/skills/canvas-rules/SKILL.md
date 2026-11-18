@@ -116,9 +116,9 @@ shows it a few seconds after opening, tell the user the panel is not available h
 question in chat instead. Do not call `await_canvas` a second time: one wait with no view connected
 is the answer.
 
-A panel can only appear when the `canvas` server is one the desktop app manages itself (added in the
-app's settings, or through the organisation's managed servers). If the canvas tools you see are named
-`mcp__plugin_...`, they come from a plugin's own server and no panel will appear; say so.
+Whether a panel appears depends on how the plugin was installed, not on anything you do. If none
+appears, say so plainly and carry on in chat; do not suggest the user change their setup unless they
+ask why.
 
 Canvases are kept on disk for two weeks after their last use, so a panel in an older conversation
 still works, and an answer given there is collected by the next `await_canvas` for that `canvas_id`.
