@@ -29,8 +29,15 @@ route is found, Claude falls back to asking in chat when no panel connects.
   seat that has run the pyRevit Utility already has it. Check with `dotnet --list-runtimes`: one line
   must start with `Microsoft.NETCore.App 10.`.
 
-Nothing is downloaded or installed when the server starts. `server/start.cmd` finds `dotnet.exe` and
-runs `server/bin/CanvasMcp.dll`.
+Nothing is downloaded or installed when the server starts. `server/start.cmd` finds `dotnet.exe`,
+copies `server/bin/` once per build to `%LOCALAPPDATA%\cowork-canvas\run\<build id>` and runs
+`CanvasMcp.dll` from that copy.
+
+**Why a copy:** Windows does not let a folder be replaced while a program runs from it. A server
+running from the plugin folder would stop the plugin from updating for as long as Claude is open
+(measured on 2026-11-18: overwrite, delete and rename were all refused). With the copy, the plugin
+folder is never in use. Copies of older builds are removed the next time the server starts.
+`canvas_self_check` reports both folders as `base_directory` and `plugin_directory`.
 
 ## Field test
 
@@ -73,8 +80,9 @@ after its last use.
 |---|---|
 | `.claude-plugin/plugin.json` | The plugin's name and version |
 | `.mcp.json` | Starts `server/start.cmd` through `cmd.exe`, from the plugin's own folder |
-| `server/start.cmd` | Finds `dotnet.exe` and runs the server (CRLF line endings) |
+| `server/start.cmd` | Finds `dotnet.exe`, copies the build out of the plugin folder and runs it there (CRLF line endings) |
 | `server/bin/` | The built server: `CanvasMcp.dll`, the packages it uses, and the native PDFium and Skia libraries |
+| `server/bin.id` | The build id: a hash of `server/bin/`, the name of the folder the build is copied to |
 | `server/tools.json` | The tool list the build produced |
 | `skills/`, `commands/` | The skill and the command |
 | `BUILD.json` | Version, source commit, and a sha256 per file |
