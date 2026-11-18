@@ -1,0 +1,95 @@
+{
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "open_canvas",
+      "title": "Open canvas",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": false,
+      "open_world": false,
+      "meta": {
+        "ui": {
+          "resourceUri": "ui://cowork-canvas/panel.html"
+        }
+      }
+    },
+    {
+      "name": "update_canvas",
+      "title": "Update canvas",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": false,
+      "open_world": false,
+      "meta": null
+    },
+    {
+      "name": "await_canvas",
+      "title": "Wait for the user\u0027s answers",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": true,
+      "open_world": false,
+      "meta": null
+    },
+    {
+      "name": "get_canvas",
+      "title": "Get canvas state",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": true,
+      "open_world": false,
+      "meta": null
+    },
+    {
+      "name": "close_canvas",
+      "title": "Close canvas",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": true,
+      "open_world": false,
+      "meta": null
+    },
+    {
+      "name": "canvas_self_check",
+      "title": "Check the canvas server",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": true,
+      "open_world": false,
+      "meta": null
+    },
+    {
+      "name": "canvas_sync",
+      "title": "Canvas: sync view",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": true,
+      "open_world": false,
+      "meta": {
+        "ui": {
+          "resourceUri": "ui://cowork-canvas/panel.html",
+          "visibility": [
+            "app"
+          ]
+        }
+      }
+    },
+    {
+      "name": "canvas_event",
+      "title": "Canvas: user event",
+      "read_only": true,
+      "destructive": false,
+      "idempotent": false,
+      "open_world": false,
+      "meta": {
+        "ui": {
+          "resourceUri": "ui://cowork-canvas/panel.html",
+          "visibility": [
+            "app"
+          ]
+        }
+      }
+    }
+  ]
+}

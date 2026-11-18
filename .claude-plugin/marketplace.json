@@ -1,0 +1,26 @@
+{
+  "name": "vo-claude-plugins",
+  "description": "Claude cowork plugins for Engineering Plus",
+  "owner": {
+    "name": "Victor Ortega",
+    "email": "victor.ortega@eplusadvisors.com"
+  },
+  "plugins": [
+    {
+      "name": "cowork-canvas",
+      "displayName": "Cowork Canvas",
+      "description": "An interactive panel for Claude: Claude opens one panel in the conversation, keeps it up to date while it works, and collects what the user answers in it (choices, approvals, text, button clicks). Runs the canvas MCP server on this Windows machine with the .NET 10 runtime the pyRevit installer brings; nothing else is installed. Phase 0 build: text, tiles, steps, questions and action buttons. Run /canvas-demo for the field test.",
+      "author": {
+        "name": "Victor Ortega",
+        "email": "victor.ortega@eplusadvisors.com"
+      },
+      "keywords": ["mcp"],
+      "version": "0.1.0",
+      "source": "./plugins/cowork-canvas",
+      "category": "development",
+      "tags": ["internal", "mcp", "panel", "revit"],
+      "homepage": "https://github.com/Engineering-PLUS/vo-plugin-catalog/tree/cowork-canvas/plugins/cowork-canvas",
+      "defaultEnabled": false
+    }
+  ]
+}

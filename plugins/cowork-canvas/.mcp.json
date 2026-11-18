@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "canvas": {
+      "command": "cmd.exe",
+      "args": [
+        "/d",
+        "/c",
+        "${CLAUDE_PLUGIN_ROOT}\\server\\start.cmd"
+      ]
+    }
+  }
+}

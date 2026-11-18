@@ -1,0 +1,7 @@
+# cmd.exe needs CRLF. Built files are binary. Everything else stays LF so the
+# hashes in each plugin's BUILD.json do not depend on the machine that checks out.
+*.cmd text eol=crlf
+*.dll binary
+*.sh text eol=lf
+*.json text eol=lf
+*.md text eol=lf
