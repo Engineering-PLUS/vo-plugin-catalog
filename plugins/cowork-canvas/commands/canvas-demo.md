@@ -5,7 +5,8 @@ description: Open a demo canvas and report whether the panel works on this machi
 Run the Cowork Canvas field test. Do each step in order and keep the results for the report at the end.
 If a step fails, record the exact error text and continue with the next step.
 
-The panel tools come from the `cowork-canvas` connector, a hosted server. Nothing runs on this machine.
+The panel tools come from the canvas connector (named `canvas` on EPLUS seats), a hosted server.
+Nothing runs on this machine.
 
 1. Check whether you have the tool `open_canvas`. If you do not, the connector is not connected in
    this session: write the report (step 8) saying so, and stop. Do not try to reach the server another
@@ -47,10 +48,16 @@ The panel tools come from the `cowork-canvas` connector, a hosted server. Nothin
 
 5. Call `await_canvas` with `wait_s: 0` to read all answers, then call `update_canvas` to set the
    "Answered" tile to the number of answered questions and to move the steps on: "Waiting for your
-   answers" to `ok`, "Panel updated by Claude" to `ok`, "Report written" to `run`. Ask the user whether
-   the panel changed in place without a second panel appearing.
+   answers" to `ok`, "Panel updated by Claude" to `ok`, "Report written" to `run`.
+   Then ask the user, in one message, to do three things in the panel and to tell you when they are
+   done: press Expand (top right) and then Collapse; open "Host report" at the bottom and press "Send
+   a test message to Claude"; press "Update model context". Ask in the same message whether the panel
+   changed in place without a second panel appearing, and whether anything moved or jumped while they
+   scrolled or typed. End your turn. Continue from step 6 when they answer. If a message starting
+   with `Canvas test message` arrives, record that the panel can post into the conversation, reply
+   "received", and keep waiting for the user.
 
-6. Call `get_canvas` and record the `host` section: `host`, `capabilities`, `display_mode`,
+6. Call `get_canvas` and record the `host` section: `panel_version`, `host`, `capabilities`, `display_mode`,
    `available_display_modes`, `viewport`, and everything under `tests` (`tool_call_ms`,
    `six_parallel_calls_ms`, `send_message`, `update_model_context`, `display_mode_request`).
    If `host` is missing, record that the panel never reported.
@@ -63,6 +70,8 @@ The panel tools come from the `cowork-canvas` connector, a hosted server. Nothin
 
 8. Write the report in chat as a short table: machine name if you know it, the tool name prefix,
    whether the canvas tools were available, the server version and revision, the `clients` list, the
-   `panel_page_reads` list, whether the panel appeared, whether updates arrived in place, how the
-   answers arrived and how long the wait took, whether fullscreen, messages and model context were
-   accepted, the tool-call timings, and every error you recorded, word for word.
+   `panel_page_reads` list, the `panel_version` beside the server version (if they differ, the host is
+   showing an older copy of the panel page), whether the panel appeared, whether updates arrived in
+   place, what the user said about movement while scrolling or typing, how the answers arrived and how
+   long the wait took, whether fullscreen, messages and model context were accepted, the tool-call
+   timings, and every error you recorded, word for word.

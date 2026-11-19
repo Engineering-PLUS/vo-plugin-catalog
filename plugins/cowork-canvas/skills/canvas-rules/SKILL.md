@@ -128,12 +128,15 @@ Every tool but `open_canvas` and `canvas_self_check` needs the `canvas_id`. Keep
 
 ## When the canvas tools are missing
 
-The panel tools come from the `cowork-canvas` connector, a server the company hosts. If `open_canvas`
+The panel tools come from the canvas connector (named `canvas` on EPLUS seats), a server the company
+hosts. If `open_canvas`
 and the other tools are not available in a session, the connector is not set up or not connected on
 this machine. Say so in one line and carry on in chat. Do not try to reach the server another way.
 
 ## Checking the server
 
-`canvas_self_check` reports the server's version, which programs connected to it and whether each
-said it can show panels, and recent fetches of the panel page. Call it when a canvas tool fails with
+`canvas_self_check` reports the server's version, which programs connected to it, and recent fetches
+of the panel page. A fetch by the desktop app means it is showing the panel. Do not read anything
+into `declares_mcp_apps`: the desktop app shows panels while reporting it as false. Call the check
+when a canvas tool fails with
 an error that is not about your input, or when the user asks why no panel appears.

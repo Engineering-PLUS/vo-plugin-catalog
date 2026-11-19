@@ -7,7 +7,8 @@ while it works, and collects what the user answers in it.
 > edit there.**
 
 This plugin is the skill and the field-test command. The panel itself comes from the
-**`cowork-canvas` connector**, a server hosted on vm-hermes that every seat reaches with a token in
+**canvas connector** (named `canvas` on EPLUS seats), a server hosted on vm-hermes that every seat
+reaches with a token in
 its managed configuration. Nothing runs on the seat and nothing is installed.
 
 ## Why the server is not in the plugin
@@ -33,7 +34,7 @@ carried a local server and never showed a panel for that reason.
 | `await_canvas` | Claude | Waits up to 40 s for the user's answers and button clicks. |
 | `get_canvas` | Claude | What a panel shows now, the answers so far, and what the host reported about itself. |
 | `close_canvas` | Claude | Marks a panel finished. |
-| `canvas_self_check` | Claude | The server's version, who connected and whether each can show panels, recent fetches of the panel page. |
+| `canvas_self_check` | Claude | The server's version, who connected, and recent fetches of the panel page (a fetch means a host is showing the panel). |
 | `canvas_sync` | the panel | Long poll for changes, up to 25 s. |
 | `canvas_event` | the panel | Stores an answer, a button click or the host report. |
 
